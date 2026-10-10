@@ -1,0 +1,144 @@
+[
+  {
+    "equipment_id": "EQ-CAT-320",
+    "provider_id": "PROV-001",
+    "model_name": "Caterpillar 320 GC",
+    "equipment_type": "Excavator",
+    "capacity": "20-ton",
+    "daily_rate": 1100.0,
+    "min_rental_days": 2,
+    "weight_tons": 22.0,
+    "max_reach_m": 9.8,
+    "min_access_width_m": 3.5,
+    "inspection_status": "PASSED",
+    "risk_tier": "STANDARD",
+    "eligible_attachments": ["hydraulic_breaker", "digging_bucket", "trenching_bucket"],
+    "specifications": {
+      "horsepower": 146,
+      "fuel_capacity_gal": 91,
+      "track_width_mm": 600
+    },
+    "status": "AVAILABLE"
+  },
+  {
+    "equipment_id": "EQ-CAT-305",
+    "provider_id": "PROV-001",
+    "model_name": "Caterpillar 305 CR",
+    "equipment_type": "Mini Excavator",
+    "capacity": "5-ton",
+    "daily_rate": 450.0,
+    "min_rental_days": 1,
+    "weight_tons": 5.2,
+    "max_reach_m": 5.5,
+    "min_access_width_m": 2.0,
+    "inspection_status": "PASSED",
+    "risk_tier": "LOW",
+    "eligible_attachments": ["hydraulic_breaker", "auger", "grading_bucket"],
+    "specifications": {
+      "horsepower": 45,
+      "fuel_capacity_gal": 17,
+      "track_width_mm": 400
+    },
+    "status": "AVAILABLE"
+  },
+  {
+    "equipment_id": "EQ-JLG-600",
+    "provider_id": "PROV-001",
+    "model_name": "JLG 600AJ",
+    "equipment_type": "Boom Lift",
+    "capacity": "60-ft",
+    "daily_rate": 650.0,
+    "min_rental_days": 1,
+    "weight_tons": 10.5,
+    "max_reach_m": 12.1,
+    "min_access_width_m": 2.5,
+    "inspection_status": "PASSED",
+    "risk_tier": "STANDARD",
+    "eligible_attachments": ["pipe_racks", "generator"],
+    "specifications": {
+      "platform_height_ft": 60,
+      "platform_capacity_lbs": 500,
+      "power_source": "Diesel"
+    },
+    "status": "AVAILABLE"
+  },
+  {
+    "equipment_id": "EQ-KOM-D65",
+    "provider_id": "PROV-001",
+    "model_name": "Komatsu D65EX-18",
+    "equipment_type": "Bulldozer",
+    "capacity": "20-ton",
+    "daily_rate": 1400.0,
+    "min_rental_days": 3,
+    "weight_tons": 21.0,
+    "max_reach_m": 0.0,
+    "min_access_width_m": 3.8,
+    "inspection_status": "PASSED",
+    "risk_tier": "HIGH",
+    "eligible_attachments": ["ripper", "winch"],
+    "specifications": {
+      "horsepower": 217,
+      "blade_capacity_m3": 5.6
+    },
+    "status": "AVAILABLE"
+  },
+  {
+    "equipment_id": "EQ-CAT-950",
+    "provider_id": "PROV-001",
+    "model_name": "Caterpillar 950M",
+    "equipment_type": "Wheel Loader",
+    "capacity": "18-ton",
+    "daily_rate": 1000.0,
+    "min_rental_days": 2,
+    "weight_tons": 18.5,
+    "max_reach_m": 4.1,
+    "min_access_width_m": 3.2,
+    "inspection_status": "PASSED",
+    "risk_tier": "STANDARD",
+    "eligible_attachments": ["pallet_forks", "general_purpose_bucket"],
+    "specifications": {
+      "bucket_capacity_yd3": 4.5,
+      "breakout_force_kn": 181
+    },
+    "status": "AVAILABLE"
+  },
+  {
+    "equipment_id": "EQ-BOB-T770",
+    "provider_id": "PROV-001",
+    "model_name": "Bobcat T770 Compact Track Loader",
+    "equipment_type": "Skid Steer",
+    "capacity": "4.8-ton",
+    "daily_rate": 420.0,
+    "min_rental_days": 1,
+    "weight_tons": 4.8,
+    "max_reach_m": 3.3,
+    "min_access_width_m": 2.0,
+    "inspection_status": "PASSED",
+    "risk_tier": "LOW",
+    "eligible_attachments": ["hydraulic_breaker", "auger", "sweeper"],
+    "specifications": {
+      "rated_operating_capacity_lbs": 3475,
+      "horsepower": 92
+    },
+    "status": "AVAILABLE"
+  },
+  {
+    "equipment_id": "EQ-CAT-320-FL",
+    "provider_id": "PROV-001",
+    "model_name": "Caterpillar 320D (Backup Unit)",
+    "equipment_type": "Excavator",
+    "capacity": "20-ton",
+    "daily_rate": 1150.0,
+    "min_rental_days": 2,
+    "weight_tons": 22.5,
+    "max_reach_m": 9.8,
+    "min_access_width_m": 3.5,
+    "inspection_status": "INSPECTION_OVERDUE",
+    "risk_tier": "HIGH",
+    "eligible_attachments": ["digging_bucket"],
+    "specifications": {
+      "horsepower": 140
+    },
+    "status": "MAINTENANCE_HOLD"
+  }
+]

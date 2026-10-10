@@ -1,0 +1,41 @@
+[
+  {
+    "contractor_id": "CON-101",
+    "business_name": "Austin Metro Excavation LLC",
+    "contact_name": "Marcus Vance",
+    "contact_email": "mvance@austinmetroexcavation.com",
+    "credit_tier": "TIER_1",
+    "risk_tier": "LOW",
+    "verified_insurance": true,
+    "insurance_expiry": "2027-01-15",
+    "safety_score": 4.9,
+    "has_certified_operators": true,
+    "past_rentals_count": 14
+  },
+  {
+    "contractor_id": "CON-102",
+    "business_name": "Hill Country Builders Inc",
+    "contact_name": "Sarah Jenkins",
+    "contact_email": "sjenkins@hillcountrybuild.com",
+    "credit_tier": "TIER_2",
+    "risk_tier": "STANDARD",
+    "verified_insurance": true,
+    "insurance_expiry": "2026-11-30",
+    "safety_score": 4.2,
+    "has_certified_operators": false,
+    "past_rentals_count": 3
+  },
+  {
+    "contractor_id": "CON-103",
+    "business_name": "Lone Star Demolition Pros",
+    "contact_name": "Bubba Ray",
+    "contact_email": "bray@lonestardemo.com",
+    "credit_tier": "TIER_3",
+    "risk_tier": "HIGH",
+    "verified_insurance": false,
+    "insurance_expiry": "2025-08-01",
+    "safety_score": 3.1,
+    "has_certified_operators": false,
+    "past_rentals_count": 1
+  }
+]

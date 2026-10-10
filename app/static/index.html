@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rentaliq — AI Equipment Rental Decision Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ======================================================== */
+    /* CLEAN SOFT-WHITE DESIGN SYSTEM WITH SOFTER COLORS        */
+    /* ======================================================== */
+    :root {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f1f5f9;
+      --bg-hover: #f8fafc;
+      
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --border-focus: rgba(99, 102, 241, 0.45);
+      
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-soft: #eef2ff;
+      --primary-border: #c7d2fe;
+      
+      --success: #059669;
+      --success-soft: #ecfdf5;
+      --success-border: #a7f3d0;
+      
+      --warning: #d97706;
+      --warning-soft: #fffbeb;
+      --warning-border: #fde68a;
+      
+      --danger: #e11d48;
+      --danger-soft: #fff1f2;
+      --danger-border: #fecdd3;
+      
+      --cyan: #0284c7;
+      --cyan-soft: #f0f9ff;
+      --cyan-border: #bae6fd;
+
+      --purple: #7c3aed;
+      --purple-soft: #f5f3ff;
+      --purple-border: #ddd6fe;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+
+      --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+      --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Global Header */
+    .app-header {
+      height: 60px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-xs);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 1.15rem;
+      box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      margin-left: 0.5rem;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+    .role-toggle {
+      display: flex;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+    }
+    .role-toggle-btn {
+      padding: 0.4rem 0.95rem;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .role-toggle-btn.active {
+      background: var(--bg-surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+      font-weight: 700;
+    }
+    .mode-pill {
+      font-size: 0.74rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .mode-pill.llm {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: var(--success-border);
+    }
+    .mode-pill.simulated {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: var(--warning-border);
+    }
+    .mode-pill:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+    }
+
+    /* Global API Key Banner */
+    .global-api-banner {
+      background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%);
+      border-bottom: 1px solid var(--warning-border);
+      color: #92400e;
+      padding: 0.55rem 1.75rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .global-api-banner button {
+      background: #b45309;
+      color: #fff;
+      border: none;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 1rem;
+    }
+    .global-api-banner button:hover { background: #92400e; }
+
+    /* Nav bar block */
+    .menu-bar-block {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.5rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .menu-profile-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      padding: 0.35rem 0.6rem;
+      border-radius: var(--radius-sm);
+      transition: background 0.15s;
+    }
+    .menu-profile-pill:hover {
+      background: var(--bg-card-subtle);
+    }
+    .menu-avatar-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .menu-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .menu-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+    .menu-btn:hover {
+      background: var(--bg-card-subtle);
+      color: var(--text-main);
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+    .menu-btn.primary-action {
+      background: var(--primary-soft);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+    .menu-btn.primary-action:hover {
+      background: #e0e7ff;
+    }
+
+    /* Views */
+    .view-wrap { display: none; }
+    .view-wrap.active { display: block; }
+
+    /* ======================================================== */
+    /* CONTRACTOR SCREEN: LEFT = CATALOG, RIGHT = CHAT          */
+    /* ======================================================== */
+    .contractor-screen-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+      background: var(--bg-base);
+    }
+
+    /* Left Side: Available Equipments */
+    .c-left-side {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: var(--bg-base);
+      overflow-y: auto;
+    }
+    .catalog-main-content {
+      padding: 1.5rem;
+      flex: 1;
+    }
+    .catalog-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.1rem;
+    }
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 0.45rem;
+      margin-bottom: 1.25rem;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .f-tab-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .f-tab-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    }
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .eq-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+    .eq-card:hover {
+      border-color: var(--primary-border);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .eq-status-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.22rem 0.55rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      position: absolute;
+      top: 0.95rem;
+      right: 0.95rem;
+      border: 1px solid transparent;
+    }
+    .status-avail { background: var(--success-soft); color: var(--success); border-color: var(--success-border); }
+    .status-booked { background: var(--warning-soft); color: var(--warning); border-color: var(--warning-border); }
+    .status-hold { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); }
+    .eq-name {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.15rem;
+      padding-right: 5rem;
+      line-height: 1.3;
+    }
+    .eq-sub {
+      font-size: 0.78rem;
+      color: var(--cyan);
+      font-weight: 600;
+      margin-bottom: 0.85rem;
+    }
+    .eq-spec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      background: var(--bg-card-subtle);
+      border-radius: 8px;
+      padding: 0.6rem;
+      font-size: 0.74rem;
+      margin-bottom: 0.95rem;
+      border: 1px solid var(--border-subtle);
+    }
+    .spec-item { display: flex; flex-direction: column; }
+    .spec-lbl { color: var(--text-dim); font-size: 0.68rem; font-weight: 500; }
+    .spec-val { color: var(--text-main); font-weight: 700; }
+    .eq-card-bottom {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+    .eq-daily-rate {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .eq-daily-rate span { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+    .btn-quick-inquire {
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      color: var(--primary);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.4rem 0.85rem;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-quick-inquire:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* Right Side: Dedicated Antigravity Chat */
+    .c-right-chat {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-surface);
+      height: 100%;
+      overflow: hidden;
+    }
+    .chat-top-bar {
+      padding: 0.95rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-surface);
+    }
+    .chat-status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .chat-stream-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      background: #fafbfc;
+    }
+    .chat-bubble-row {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 90%;
+    }
+    .chat-bubble-row.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .chat-bubble-row.agent {
+      align-self: flex-start;
+    }
+    .c-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-xs);
+    }
+    .c-avatar.agent { background: var(--primary); color: #fff; }
+    .c-avatar.user { background: #334155; color: #fff; }
+    .c-bubble {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.95rem 1.15rem;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+    }
+    .chat-bubble-row.user .c-bubble {
+      background: var(--primary);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+    }
+
+    /* Decision Cards Inside Chat */
+    .chat-decision-card {
+      margin-top: 0.75rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      box-shadow: var(--shadow-xs);
+    }
+    .decision-badge-pill {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      display: inline-block;
+      margin-bottom: 0.4rem;
+      border: 1px solid transparent;
+    }
+    .decision-badge-pill.AUTO_QUOTE { background: var(--success-soft); color: var(--success); border-color: var(--success-border); }
+    .decision-badge-pill.REQUEST_INFO { background: var(--warning-soft); color: var(--warning); border-color: var(--warning-border); }
+    .decision-badge-pill.MANUAL_REVIEW { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); }
+
+    /* Quick Prompt Pills */
+    .chat-preset-bar {
+      padding: 0.65rem 1.25rem;
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+    }
+    .preset-pill {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 9999px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .preset-pill:hover {
+      background: var(--primary-soft);
+      border-color: var(--primary-border);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    /* Chat Input Bar */
+    .chat-input-bar {
+      padding: 0.95rem 1.5rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+    }
+    .chat-input {
+      flex: 1;
+      height: 44px;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 1rem;
+      color: var(--text-main);
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .chat-input:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .btn-send {
+      height: 44px;
+      padding: 0 1.35rem;
+      background: var(--primary);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.15s;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    }
+    .btn-send:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* ======================================================== */
+    /* PROVIDER SCREEN: 3 CARDS (DISPATCHED, REQUESTS, REVIEW)  */
+    /* ======================================================== */
+    .provider-screen-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.75rem;
+    }
+    .provider-top-menu {
+      border-radius: var(--radius-md);
+      margin-bottom: 1.75rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .provider-three-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .provider-hub-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.6rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+    .provider-hub-card:hover {
+      border-color: var(--primary-border);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .provider-hub-card.active {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px var(--primary-soft), var(--shadow-md);
+    }
+    .hub-card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    .hub-card-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+    }
+    .hub-card-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .hub-badge {
+      display: inline-flex;
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      border: 1px solid transparent;
+    }
+    .badge-review { background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); }
+    .badge-dispatched { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan-border); }
+    .badge-requests { background: var(--primary-soft); color: var(--primary); border-color: var(--primary-border); }
+
+    /* Provider Drilldown Section */
+    .p-drilldown-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .p-drilldown-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.95rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Requests Tab Layout: Contractor/Equipment Card + Chat Panel */
+    .requests-tab-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 1.5rem;
+    }
+    .summary-box {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.35rem;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.84rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-row span:first-child { color: var(--text-muted); font-weight: 500; }
+    .summary-row span:last-child { color: var(--text-main); font-weight: 700; }
+
+    /* Modal / Popups (Profile, History, Settings) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1.5rem;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-window {
+      width: 100%;
+      max-width: 540px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow-modal);
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.35rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .btn-close-modal {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-close-modal:hover {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    /* Tables */
+    .clean-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .clean-table th {
+      text-align: left;
+      padding: 0.75rem 0.95rem;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card-subtle);
+    }
+    .clean-table td {
+      padding: 0.85rem 0.95rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    .clean-table tr:hover td {
+      background: var(--bg-base);
+    }
+
+    /* Form Controls in Modals */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .contractor-screen-grid { grid-template-columns: 1fr; height: auto; }
+      .provider-three-cards { grid-template-columns: 1fr; }
+      .requests-tab-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top System API Key Notice Banner (Dynamic) -->
+  <div id="globalApiNotice" class="global-api-banner" style="display: none;">
+    <div>
+      <span>🔑 <strong>System API Key Required:</strong> Configure your Google Gemini or OpenAI API Key so the decision engine runs consistently for all users.</span>
+    </div>
+    <button onclick="openModal('providerSettings')">Configure API Key</button>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- TOP APP HEADER BAR                                       -->
+  <!-- ======================================================== -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-logo">R</div>
+      <div style="display: flex; align-items: center;">
+        <span class="brand-title">Rentaliq</span>
+        <span class="brand-badge">AI AGENT</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Active Mode Indicator (Clickable to open API Key Settings) -->
+      <div id="headerModePill" class="mode-pill simulated" onclick="openModal('providerSettings')" title="Click to manage System API Key and LLM Engine">
+        <span class="pulse-dot"></span>
+        <span id="headerModeText">SIMULATED (Offline)</span>
+      </div>
+
+      <!-- Quick Role Toggle -->
+      <div class="role-toggle">
+        <button class="role-toggle-btn active" id="btnToggleContractor" onclick="switchMainRole('contractor')">
+          Contractor View
+        </button>
+        <button class="role-toggle-btn" id="btnToggleProvider" onclick="switchMainRole('provider')">
+          Provider View
+        </button>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ======================================================== -->
+  <!-- 1. CONTRACTOR SCREEN                                     -->
+  <!-- Left Side: Menu + Available Equipments | Right: Chat      -->
+  <!-- ======================================================== -->
+  <div id="screenContractor" class="view-wrap active">
+    <div class="contractor-screen-grid">
+
+      <!-- LEFT SIDE: Profile Menu Bar + Available Equipments Grid -->
+      <section class="c-left-side">
+
+        <!-- Top Menu Block: Profile, History, Preferences -->
+        <div class="menu-bar-block">
+          <div class="menu-profile-pill" onclick="openModal('profile')">
+            <div class="menu-avatar-icon">MV</div>
+            <span>Marcus Vance</span>
+            <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 500;">(Austin Metro)</span>
+          </div>
+
+          <div class="menu-links">
+            <button class="menu-btn" onclick="openModal('profile')">
+              <span>👤</span> <span>Profile</span>
+            </button>
+            <button class="menu-btn" onclick="openModal('history')">
+              <span>📜</span> <span>History</span>
+            </button>
+            <button class="menu-btn" onclick="openModal('contractorSettings')">
+              <span>⚙️</span> <span>Preferences</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Available Equipments Section -->
+        <div class="catalog-main-content">
+          <div class="catalog-title-row">
+            <div class="section-title">
+              <span>🚜 Available Fleet</span>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 500;">(Real-time inventory)</span>
+            </div>
+            <button class="menu-btn" style="font-size: 0.75rem;" onclick="loadEquipmentCatalog()">
+              🔄 Refresh
+            </button>
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="filter-tabs">
+            <button class="f-tab-btn active" onclick="filterCatalog('all', this)">All Fleet</button>
+            <button class="f-tab-btn" onclick="filterCatalog('Excavator', this)">Excavators</button>
+            <button class="f-tab-btn" onclick="filterCatalog('Boom Lift', this)">Boom Lifts</button>
+            <button class="f-tab-btn" onclick="filterCatalog('Bulldozer', this)">Bulldozers</button>
+            <button class="f-tab-btn" onclick="filterCatalog('Wheel Loader', this)">Loaders</button>
+          </div>
+
+          <!-- Equipment Cards Grid -->
+          <div class="catalog-grid" id="catalogGrid">
+            <div style="color: var(--text-dim); font-size: 0.88rem; padding: 1rem;">Loading equipment catalog...</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT SIDE: Dedicated Antigravity Agent Chat Section -->
+      <section class="c-right-chat">
+
+        <!-- Chat Header -->
+        <div class="chat-top-bar">
+          <div class="chat-status-indicator">
+            <span class="pulse-dot" style="color: var(--success);"></span>
+            <span>Rentaliq Concierge Agent</span>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-weight: 500;">Autonomous Multi-Tool Loop</span>
+        </div>
+
+        <!-- Message Stream Area -->
+        <div class="chat-stream-area" id="chatStream">
+          <!-- Initial Welcome Message -->
+          <div class="chat-bubble-row agent">
+            <div class="c-avatar agent">R</div>
+            <div class="c-bubble">
+              <strong>Hello Marcus!</strong> I am <strong>Rentaliq</strong>, your AI Equipment Rental Decision Agent.
+              <br><br>
+              Browse the <strong>Available Fleet</strong> on the left and click <em>"Ask in Chat"</em>, or type your job requirements directly below.
+              <br><br>
+              I will automatically verify schedule availability, jobsite clearance criteria, and compute verified quote rates in real-time.
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Scenario Presets -->
+        <div class="chat-preset-bar">
+          <button class="preset-pill" onclick="sendPrompt('Need a 20-ton excavator for 4 days starting 2026-11-12 at 1200 East 7th St, Austin TX. Standard open site access with certified operator on our crew. Our budget is $8,000.')">
+            ⚡ 20t Excavator ($8K Budget)
+          </button>
+          <button class="preset-pill" onclick="sendPrompt('Looking to rent an excavator for our upcoming trenching project in Buda, TX. Can you give us pricing and availability?')">
+            ❓ Vague Dates (Clarification)
+          </button>
+          <button class="preset-pill" onclick="sendPrompt('Need a 20-ton excavator for 4 days from 2026-10-18 to 2026-10-22 at our Pflugerville jobsite.')">
+            📅 Booking Collision (Oct 18-22)
+          </button>
+          <button class="preset-pill" onclick="sendPrompt('Need a 20-ton excavator for 3 days starting 2026-11-15 in downtown Austin. The site access is through a very narrow alley with only 2.2 meters clearance next to active overhead power lines with a steep slope.')">
+            ⚠️ Narrow 2.2m Access Hazard
+          </button>
+          <button class="preset-pill" onclick="sendPrompt('Looking to rent a 20-ton excavator for 5 days starting 2026-11-20 in San Marcos. Our maximum total budget is strictly capped at $1,800.')">
+            💰 Budget Cap ($1,800)
+          </button>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <form class="chat-input-bar" id="chatInputForm" onsubmit="handleSendChat(event)">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type your equipment rental request..." required autocomplete="off">
+          <button type="submit" class="btn-send" id="btnSend">
+            <span>Send 💬</span>
+          </button>
+        </form>
+
+      </section>
+
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 2. PROVIDER COMPANY SCREEN                               -->
+  <!-- Left Menu (O=) + 3 Hub Cards: Dispatched, Requests, Review-->
+  <!-- ======================================================== -->
+  <div id="screenProvider" class="view-wrap">
+    <div class="provider-screen-wrap">
+
+      <!-- Top Menu Block for Provider -->
+      <div class="menu-bar-block provider-top-menu">
+        <div class="menu-profile-pill" onclick="openModal('profile')">
+          <div class="menu-avatar-icon" style="color: var(--cyan); background: var(--cyan-soft); border-color: var(--cyan-border);">AP</div>
+          <span>Apex Rentals Dispatch Desk</span>
+          <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 500;">(Provider Admin)</span>
+        </div>
+
+        <div class="menu-links">
+          <button class="menu-btn" onclick="openModal('profile')">
+            <span>🏢</span> <span>Company Profile</span>
+          </button>
+          <button class="menu-btn" onclick="openModal('history')">
+            <span>📋</span> <span>Audit History</span>
+          </button>
+          <button class="menu-btn primary-action" onclick="openModal('providerSettings')">
+            <span>🔑</span> <span>Global API Key & LLM</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- The Three Main Hub Cards: Dispatched | Requests | Manual Review -->
+      <div class="provider-three-cards">
+
+        <!-- Card 1: Dispatched -->
+        <div class="provider-hub-card" id="hubCardDispatched" onclick="selectProviderHub('dispatched')">
+          <div class="hub-card-icon">🚚</div>
+          <div class="hub-card-title">Dispatched Fleet</div>
+          <div class="hub-card-sub">Active machinery on customer jobsites</div>
+          <div class="hub-badge badge-dispatched" id="badgeDispatchedCount">2 Machines Active</div>
+        </div>
+
+        <!-- Card 2: Requests (Direct link to Requests Tab) -->
+        <div class="provider-hub-card active" id="hubCardRequests" onclick="selectProviderHub('requests')">
+          <div class="hub-card-icon">📩</div>
+          <div class="hub-card-title">Inquiry Requests</div>
+          <div class="hub-card-sub">Inbound contractor rental inquiries</div>
+          <div class="hub-badge badge-requests" id="badgeRequestsCount">Latest Stream</div>
+        </div>
+
+        <!-- Card 3: Manual Review -->
+        <div class="provider-hub-card" id="hubCardReview" onclick="selectProviderHub('review')">
+          <div class="hub-card-icon">🚨</div>
+          <div class="hub-card-title">Manual Review</div>
+          <div class="hub-card-sub">Flagged safety & policy escalations</div>
+          <div class="hub-badge badge-review" id="badgeReviewCount">3 Pending Action</div>
+        </div>
+
+      </div>
+
+      <!-- Provider Drilldown Panel -->
+      <div class="p-drilldown-panel" id="providerDrilldown">
+
+        <!-- SUB-VIEW 1: REQUESTS TAB -->
+        <div id="subViewRequests">
+          <div class="p-drilldown-head">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Inquiry Requests Detail & Agent Reasoning</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time contractor interaction, multi-tool findings, and policy evaluations</p>
+            </div>
+            <select id="requestSelectPicker" onchange="loadSelectedInquiryDetail(this.value)" class="form-select" style="width: auto; font-weight: 600;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="requests-tab-grid">
+            <!-- Left: Contractor & Equipment Box -->
+            <div class="summary-box">
+              <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 1rem;">Contractor & Equipment</h4>
+              <div class="summary-row"><span>Contractor:</span> <span id="reqDetailContractor">Marcus Vance (CON-101)</span></div>
+              <div class="summary-row"><span>Company:</span> <span id="reqDetailCompany">Austin Metro Excavation</span></div>
+              <div class="summary-row"><span>Credit Tier:</span> <span style="color: var(--success);" id="reqDetailCredit">Tier 1</span></div>
+              <div class="summary-row"><span>Safety Score:</span> <span id="reqDetailSafety">4.9 / 5.0</span></div>
+              <div class="summary-row"><span>Equipment:</span> <span style="color: var(--cyan);" id="reqDetailEquipment">20-ton Excavator</span></div>
+              <div class="summary-row"><span>Dates:</span> <span id="reqDetailDates">Nov 12 - Nov 16</span></div>
+              <div class="summary-row"><span>Location:</span> <span id="reqDetailLocation">Austin, TX</span></div>
+              <div class="summary-row"><span>Decision:</span> <span id="reqDetailDecision" class="decision-badge-pill AUTO_QUOTE">AUTO_QUOTE</span></div>
+            </div>
+
+            <!-- Right: Chat Panel & Reasoning Trace -->
+            <div class="summary-box" style="display: flex; flex-direction: column; background: #ffffff;">
+              <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 1rem;">Conversation & Decision Evidence</h4>
+              <div id="reqDetailChatBubble" style="background: var(--bg-card-subtle); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-size: 0.88rem; margin-bottom: 1rem; line-height: 1.6;">
+                Loading request details...
+              </div>
+
+              <div id="reqDetailActions" style="display: flex; gap: 0.6rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none; padding: 0.5rem 1rem;" onclick="actionProviderRequest('APPROVED')">
+                  ✓ Approve & Dispatch
+                </button>
+                <button class="btn-quick-inquire" style="background: var(--warning); color: #fff; border: none; padding: 0.5rem 1rem;" onclick="actionProviderRequest('COUNTER_OFFER')">
+                  ⇄ Propose Alternative
+                </button>
+                <button class="btn-quick-inquire" style="background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); padding: 0.5rem 1rem;" onclick="actionProviderRequest('REJECTED')">
+                  ✕ Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 2: DISPATCHED TAB -->
+        <div id="subViewDispatched" style="display: none;">
+          <div class="p-drilldown-head">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Currently Dispersed Fleet & Active Commitments</h3>
+            <span class="hub-badge badge-dispatched">Authoritative Active Bookings</span>
+          </div>
+
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Machine</th>
+                <th>Contractor</th>
+                <th>Rental Dates</th>
+                <th>Jobsite Location</th>
+                <th>Daily Rate</th>
+              </tr>
+            </thead>
+            <tbody id="dispatchedTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- SUB-VIEW 3: MANUAL REVIEW TAB -->
+        <div id="subViewReview" style="display: none;">
+          <div class="p-drilldown-head">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Manual Review Escalation Queue</h3>
+            <span class="hub-badge badge-review">Requires Human Sign-off</span>
+          </div>
+
+          <div id="manualReviewList">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODALS: PROFILE, HISTORY, SETTINGS                       -->
+  <!-- ======================================================== -->
+
+  <!-- 1. Profile Modal -->
+  <div class="modal-overlay" id="modalProfile">
+    <div class="modal-window">
+      <div class="modal-head">
+        <h3 class="modal-title">Account Profile</h3>
+        <button class="btn-close-modal" onclick="closeModal('profile')">✕</button>
+      </div>
+      <div style="font-size: 0.88rem; line-height: 1.7;">
+        <div class="summary-row"><span>Account Name:</span> <strong>Marcus Vance</strong></div>
+        <div class="summary-row"><span>Business:</span> <span>Austin Metro Excavation LLC</span></div>
+        <div class="summary-row"><span>Credit Tier:</span> <span style="color: var(--success); font-weight: 700;">Tier 1 (Approved)</span></div>
+        <div class="summary-row"><span>Safety Rating:</span> <span>4.9 / 5.0 (OSHA Compliant)</span></div>
+        <div class="summary-row"><span>General Liability:</span> <span style="color: var(--success); font-weight: 700;">Verified (Valid thru 2027)</span></div>
+        <div class="summary-row"><span>Dispatcher Desk:</span> <span>Apex Heavy Equipment Rentals</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. History Modal -->
+  <div class="modal-overlay" id="modalHistory">
+    <div class="modal-window" style="max-width: 680px;">
+      <div class="modal-head">
+        <h3 class="modal-title">Inquiry Evaluation Audit History</h3>
+        <button class="btn-close-modal" onclick="closeModal('history')">✕</button>
+      </div>
+      <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+        <table class="clean-table">
+          <thead>
+            <tr>
+              <th>Inquiry ID</th>
+              <th>Decision</th>
+              <th>Score</th>
+              <th>Confidence</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="historyModalBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Contractor Settings Modal -->
+  <div class="modal-overlay" id="modalContractorSettings">
+    <div class="modal-window">
+      <div class="modal-head">
+        <h3 class="modal-title">Contractor Preferences</h3>
+        <button class="btn-close-modal" onclick="closeModal('contractorSettings')">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Default Jobsite Delivery Address</label>
+        <input type="text" id="userPrefAddress" class="form-input" value="1200 East 7th St, Austin, TX 78702">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">On-Site Dispatch Contact Phone</label>
+        <input type="text" id="userPrefPhone" class="form-input" value="+1 (512) 555-0144">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Certificate of Insurance (COI) Status</label>
+        <div style="background: var(--bg-card-subtle); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+          <span>Policy #TX-GL-89102 (General Liability $2M)</span>
+          <span style="color: var(--success); font-weight: 800;">VERIFIED (Expires 2027)</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn-send" onclick="saveContractorPrefs()">
+          Save Preferences
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Global API Key & LLM Engine Settings Modal (System Admin) -->
+  <div class="modal-overlay" id="modalProviderSettings">
+    <div class="modal-window">
+      <div class="modal-head">
+        <div>
+          <h3 class="modal-title">Global API Key & LLM Engine</h3>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">Configured by system administrator — universally powers all users & inquiries</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('providerSettings')">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">LLM Provider</label>
+        <select id="settingProvider" class="form-select" onchange="handleProviderChange()">
+          <option value="gemini">Google Gemini (Gemini 1.5 Flash / 2.0)</option>
+          <option value="openai">OpenAI (GPT-4o-mini / GPT-4o)</option>
+          <option value="anthropic">Anthropic Claude</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Model Identifier</label>
+        <input type="text" id="settingModel" class="form-input" value="gemini-1.5-flash">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">API Key (Mandatory for LLM Intelligence)</label>
+        <input type="password" id="settingApiKey" class="form-input" placeholder="Paste Gemini `AIza...` or OpenAI `sk-...` key" style="font-family: 'JetBrains Mono', monospace;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.45rem;">
+          Once set here or in <code>.env</code>, this key is applied globally across all inquiries and all user sessions.
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+        <span id="apiKeySaveStatus" style="font-size: 0.8rem; font-weight: 700; color: var(--success);"></span>
+        <button class="btn-send" onclick="saveApiKeySettings()">
+          Save & Activate API Key
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT CONTROLLER                                    -->
+  <!-- ======================================================== -->
+  <script>
+    let activeRole = 'contractor';
+    let fleetCatalog = [];
+    let providerInquiries = [];
+    let providerBookings = [];
+    let activeInquiryPayload = null;
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      loadEquipmentCatalog();
+      loadSettingsStatus();
+      loadProviderData();
+    });
+
+    // ----------------------------------------------------
+    // ROLE SWITCHING
+    // ----------------------------------------------------
+    function switchMainRole(role) {
+      activeRole = role;
+      document.getElementById('btnToggleContractor').classList.toggle('active', role === 'contractor');
+      document.getElementById('btnToggleProvider').classList.toggle('active', role === 'provider');
+
+      document.getElementById('screenContractor').classList.toggle('active', role === 'contractor');
+      document.getElementById('screenProvider').classList.toggle('active', role === 'provider');
+
+      if (role === 'contractor') {
+        loadEquipmentCatalog();
+      } else {
+        loadProviderData();
+      }
+    }
+
+    // ----------------------------------------------------
+    // CONTRACTOR CATALOG
+    // ----------------------------------------------------
+    async function loadEquipmentCatalog() {
+      try {
+        const res = await fetch('/api/v1/agent/equipment');
+        fleetCatalog = await res.json();
+        renderCatalog(fleetCatalog);
+      } catch (e) {
+        console.error('Failed to load equipment catalog', e);
+      }
+    }
+
+    function renderCatalog(items) {
+      const grid = document.getElementById('catalogGrid');
+      grid.innerHTML = '';
+
+      items.forEach(eq => {
+        let statusClass = 'status-avail';
+        let statusText = '● AVAILABLE';
+
+        if (eq.status === 'MAINTENANCE_HOLD' || eq.inspection_status === 'INSPECTION_OVERDUE') {
+          statusClass = 'status-hold';
+          statusText = 'HOLD';
+        } else if (eq.equipment_id === 'EQ-CAT-320') {
+          statusClass = 'status-booked';
+          statusText = 'BOOKED (Oct 16-24)';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'eq-card';
+        card.innerHTML = `
+          <span class="eq-status-pill ${statusClass}">${statusText}</span>
+          <div class="eq-name">${escapeHtml(eq.model_name)}</div>
+          <div class="eq-sub">${eq.capacity} ${eq.equipment_type}</div>
+
+          <div class="eq-spec-grid">
+            <div class="spec-item">
+              <span class="spec-lbl">Operating Weight</span>
+              <span class="spec-val">${eq.weight_tons || '—'} tons</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-lbl">Min Access Width</span>
+              <span class="spec-val">${eq.min_access_width_m || 3.0} m</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-lbl">Min Rental Period</span>
+              <span class="spec-val">${eq.min_rental_days || 1} day(s)</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-lbl">OSHA Inspection</span>
+              <span class="spec-val" style="color: var(--success);">${eq.inspection_status || 'PASSED'}</span>
+            </div>
+          </div>
+
+          <div class="eq-card-bottom">
+            <div class="eq-daily-rate">$${eq.daily_rate.toLocaleString()} <span>/ day</span></div>
+            <button class="btn-quick-inquire" onclick="prefillChatWithEquipment('${escapeHtml(eq.model_name)}', '${eq.capacity}', '${eq.equipment_type}')">
+              Ask in Chat 💬
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterCatalog(category, btnElem) {
+      document.querySelectorAll('.f-tab-btn').forEach(b => b.classList.remove('active'));
+      if (btnElem) btnElem.classList.add('active');
+
+      if (category === 'all') {
+        renderCatalog(fleetCatalog);
+      } else {
+        const filtered = fleetCatalog.filter(e => e.equipment_type.toLowerCase().includes(category.toLowerCase()));
+        renderCatalog(filtered);
+      }
+    }
+
+    function prefillChatWithEquipment(model, capacity, type) {
+      const input = document.getElementById('chatInput');
+      input.value = `I'd like to check availability and get an estimated quote for the ${model} (${capacity} ${type}) for 4 days starting 2026-11-12 in Austin, TX.`;
+      input.focus();
+    }
+
+    // ----------------------------------------------------
+    // CONTRACTOR CHAT LOGIC (RIGHT SIDE)
+    // ----------------------------------------------------
+    function sendPrompt(promptText) {
+      const input = document.getElementById('chatInput');
+      input.value = promptText;
+      document.getElementById('chatInputForm').dispatchEvent(new Event('submit'));
+    }
+
+    async function handleSendChat(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      appendChatMessage('user', text);
+
+      // Show Agent thinking bubble
+      const stream = document.getElementById('chatStream');
+      const thinkingDiv = document.createElement('div');
+      thinkingDiv.className = 'chat-bubble-row agent';
+      thinkingDiv.id = 'thinkingBubble';
+      thinkingDiv.innerHTML = `
+        <div class="c-avatar agent">R</div>
+        <div class="c-bubble" style="color: var(--text-muted); font-style: italic; background: var(--bg-surface);">
+          Rentaliq is assessing equipment requirements, availability & safety criteria...
+        </div>
+      `;
+      stream.appendChild(thinkingDiv);
+      stream.scrollTop = stream.scrollHeight;
+
+      try {
+        const payload = {
+          contractor_message: text,
+          contractor_id: 'CON-101',
+          provider_id: 'PROV-001',
+        };
+
+        const res = await fetch('/api/v1/agent/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        const thinkElem = document.getElementById('thinkingBubble');
+        if (thinkElem) thinkElem.remove();
+
+        renderAgentChatResponse(data);
+      } catch (err) {
+        const thinkElem = document.getElementById('thinkingBubble');
+        if (thinkElem) thinkElem.remove();
+        alert('Evaluation error: ' + err.message);
+      }
+    }
+
+    function appendChatMessage(sender, text) {
+      const stream = document.getElementById('chatStream');
+      const row = document.createElement('div');
+      row.className = `chat-bubble-row ${sender}`;
+      row.innerHTML = `
+        <div class="c-avatar ${sender}">${sender === 'agent' ? 'R' : 'MV'}</div>
+        <div class="c-bubble">${escapeHtml(text)}</div>
+      `;
+      stream.appendChild(row);
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function renderAgentChatResponse(data) {
+      const stream = document.getElementById('chatStream');
+      const row = document.createElement('div');
+      row.className = 'chat-bubble-row agent';
+
+      let cardsHtml = '';
+
+      // Quote breakdown
+      if (data.estimated_quote) {
+        const q = data.estimated_quote;
+        cardsHtml += `
+          <div class="chat-decision-card" style="border-left: 4px solid var(--success); background: #f0fdf4;">
+            <div style="font-weight: 800; color: #166534; margin-bottom: 0.25rem;">💰 Verified Quote: ${q.equipment_name}</div>
+            <div style="font-size: 0.8rem; color: #374151; margin-bottom: 0.5rem;">
+              ${q.duration_days} days @ $${q.daily_rate}/day | Delivery: $${q.transport_fee} | Taxes & Fees: $${q.taxes_and_fees}
+            </div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: var(--success); margin-bottom: 0.6rem;">
+              $${q.total_estimated_amount.toLocaleString()} USD
+            </div>
+            <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none; font-weight: 700; padding: 0.45rem 0.95rem;" onclick="alert('Quote accepted! Dispatch hold placed under inquiry ID ${data.inquiry_id}.')">
+              ✓ Accept & Request Dispatch Hold
+            </button>
+          </div>
+        `;
+      }
+
+      // Counter-Offer
+      if (data.counter_offer) {
+        const co = data.counter_offer;
+        cardsHtml += `
+          <div class="chat-decision-card" style="border-left: 4px solid var(--warning); background: var(--warning-soft);">
+            <div style="font-size: 0.72rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Verified Alternative Proposed</div>
+            <div style="font-weight: 800; color: #78350f; margin: 0.25rem 0;">${co.title}</div>
+            <div style="font-size: 0.82rem; color: #451a03; margin-bottom: 0.45rem;">${co.description}</div>
+            <div style="font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; color: var(--text-main);">
+              Proposed Option: <strong style="color: #b45309;">${co.proposed_term}</strong>
+            </div>
+          </div>
+        `;
+      }
+
+      // Reasoning trace & scorecard collapsible
+      cardsHtml += `
+        <div style="margin-top: 0.75rem;">
+          <details style="font-size: 0.78rem; color: var(--text-muted); cursor: pointer;">
+            <summary style="font-weight: 700; color: var(--primary);">🔍 View Scorecard & 8-Step Reasoning Trace</summary>
+            <div style="margin-top: 0.5rem; padding: 0.75rem; background: var(--bg-card-subtle); border-radius: 8px; border: 1px solid var(--border);">
+              <div style="font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem;">Scorecard Policy Verification:</div>
+              ${data.qualification_checks.map(c => `
+                <div style="display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px solid var(--border-subtle);">
+                  <span>${c.name}</span>
+                  <span style="font-weight: 800; color: ${c.status === 'PASS' ? 'var(--success)' : c.status === 'FAIL' ? 'var(--danger)' : 'var(--warning)'};">${c.status}</span>
+                </div>
+              `).join('')}
+              <div style="margin-top: 0.6rem; font-weight: 800; color: var(--text-main);">Reasoning Steps:</div>
+              ${data.reasoning_trace.map(t => `
+                <div style="padding: 0.2rem 0; font-size: 0.76rem;">
+                  <strong style="color: var(--primary);">${t.event_type}:</strong> ${t.explanation}
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        </div>
+      `;
+
+      row.innerHTML = `
+        <div class="c-avatar agent">R</div>
+        <div class="c-bubble">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span class="decision-badge-pill ${data.decision}">${data.decision}</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-weight: 600;">Score: ${Math.round(data.qualification_score)}/100 | Conf: ${Math.round(data.confidence_score * 100)}%</span>
+          </div>
+          <div>${data.follow_up_message || data.decision_reason}</div>
+          ${cardsHtml}
+        </div>
+      `;
+
+      stream.appendChild(row);
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    // ----------------------------------------------------
+    // PROVIDER SCREEN: 3 HUBS & REQUESTS TAB
+    // ----------------------------------------------------
+    async function loadProviderData() {
+      try {
+        const inqRes = await fetch('/api/v1/agent/inquiries?limit=50');
+        providerInquiries = await inqRes.json();
+
+        const bkRes = await fetch('/api/v1/agent/bookings');
+        providerBookings = await bkRes.json();
+
+        const reviewItems = providerInquiries.filter(i => i.decision === 'MANUAL_REVIEW');
+
+        document.getElementById('badgeReviewCount').innerText = `${reviewItems.length} Pending Action`;
+        document.getElementById('badgeDispatchedCount').innerText = `${providerBookings.length} Active Bookings`;
+        document.getElementById('badgeRequestsCount').innerText = `${providerInquiries.length} Inquiries`;
+
+        // Populate requests picker
+        const picker = document.getElementById('requestSelectPicker');
+        picker.innerHTML = '';
+        providerInquiries.forEach(inq => {
+          const opt = document.createElement('option');
+          opt.value = inq.inquiry_id;
+          opt.innerText = `${inq.inquiry_id} (${inq.decision})`;
+          picker.appendChild(opt);
+        });
+
+        if (providerInquiries.length > 0) {
+          loadSelectedInquiryDetail(providerInquiries[0].inquiry_id);
+        }
+
+        renderDispatchedTable();
+        renderManualReviewList(reviewItems);
+      } catch (e) {
+        console.error('Failed to load provider data', e);
+      }
+    }
+
+    function selectProviderHub(hubName) {
+      document.getElementById('hubCardDispatched').classList.toggle('active', hubName === 'dispatched');
+      document.getElementById('hubCardRequests').classList.toggle('active', hubName === 'requests');
+      document.getElementById('hubCardReview').classList.toggle('active', hubName === 'review');
+
+      document.getElementById('subViewRequests').style.display = hubName === 'requests' ? 'block' : 'none';
+      document.getElementById('subViewDispatched').style.display = hubName === 'dispatched' ? 'block' : 'none';
+      document.getElementById('subViewReview').style.display = hubName === 'review' ? 'block' : 'none';
+    }
+
+    async function loadSelectedInquiryDetail(inquiryId) {
+      try {
+        const res = await fetch(`/api/v1/agent/inquiries/${inquiryId}`);
+        const data = await res.json();
+        activeInquiryPayload = data;
+
+        const req = data.request;
+        const resp = data.response;
+        const parsed = resp.parsed_inquiry;
+
+        document.getElementById('reqDetailContractor').innerText = `${req.contractor_id || 'CON-101'} (Marcus Vance)`;
+        document.getElementById('reqDetailCompany').innerText = 'Austin Metro Excavation LLC';
+        document.getElementById('reqDetailEquipment').innerText = `${parsed.equipment_capacity || ''} ${parsed.equipment_type || 'Equipment'}`;
+        document.getElementById('reqDetailDates').innerText = `${parsed.start_date || 'TBD'} (${parsed.duration_days || '—'} days)`;
+        document.getElementById('reqDetailLocation').innerText = parsed.location || req.project_location || 'Austin, TX';
+
+        const badge = document.getElementById('reqDetailDecision');
+        badge.className = `decision-badge-pill ${resp.decision}`;
+        badge.innerText = resp.decision;
+
+        document.getElementById('reqDetailChatBubble').innerHTML = `
+          <div style="font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem;">Contractor Message:</div>
+          <div style="color: var(--text-muted); margin-bottom: 0.75rem;">"${escapeHtml(req.contractor_message)}"</div>
+          <div style="font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem;">Agent Finding:</div>
+          <div style="color: var(--primary); font-weight: 600;">${escapeHtml(resp.decision_reason)}</div>
+        `;
+      } catch (e) {
+        console.error('Failed to load inquiry detail', e);
+      }
+    }
+
+    async function actionProviderRequest(action) {
+      if (!activeInquiryPayload) return;
+      const inqId = activeInquiryPayload.inquiry_id;
+      try {
+        await fetch(`/api/v1/agent/inquiries/${inqId}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: action, notes: `Actioned as ${action} from Provider Requests panel` }),
+        });
+        alert(`Inquiry ${inqId} successfully updated to ${action}!`);
+        loadProviderData();
+      } catch (e) {
+        alert('Action error: ' + e.message);
+      }
+    }
+
+    function renderDispatchedTable() {
+      const tbody = document.getElementById('dispatchedTableBody');
+      tbody.innerHTML = '';
+      providerBookings.forEach(bk => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${bk.booking_id}</strong></td>
+          <td><span style="color: var(--cyan); font-weight: 700;">${bk.equipment_id}</span></td>
+          <td>${bk.contractor_id}</td>
+          <td>${bk.start_date} to ${bk.end_date}</td>
+          <td>${bk.site_location || 'Austin Metro'}</td>
+          <td style="color: var(--success); font-weight: 800;">$${bk.daily_rate}/day</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderManualReviewList(items) {
+      const container = document.getElementById('manualReviewList');
+      container.innerHTML = '';
+      if (items.length === 0) {
+        container.innerHTML = `<div style="color: var(--text-muted); padding: 2rem; text-align: center;">No pending manual review items.</div>`;
+        return;
+      }
+
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.style = "background: var(--bg-surface); border: 1px solid var(--border); border-left: 4px solid var(--danger); border-radius: 8px; padding: 1.25rem; margin-bottom: 0.85rem; box-shadow: var(--shadow-sm);";
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <strong style="color: var(--text-main); font-size: 0.95rem;">${item.inquiry_id}</strong>
+            <span class="decision-badge-pill MANUAL_REVIEW">MANUAL REVIEW</span>
+          </div>
+          <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.75rem;">Score: ${Math.round(item.qualification_score)} | Requires Safety/Conflict Sign-off</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none;" onclick="actionProviderRequest('APPROVED')">✓ Approve</button>
+            <button class="btn-quick-inquire" style="background: var(--warning); color: #fff; border: none;" onclick="actionProviderRequest('COUNTER_OFFER')">⇄ Propose Counter</button>
+            <button class="btn-quick-inquire" style="background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border);" onclick="actionProviderRequest('REJECTED')">✕ Decline</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // ----------------------------------------------------
+    // MODALS & SETTINGS API LOGIC
+    // ----------------------------------------------------
+    function openModal(id) {
+      document.getElementById(`modal${id.charAt(0).toUpperCase() + id.slice(1)}`).classList.add('active');
+      if (id === 'history') loadHistoryModal();
+    }
+    function closeModal(id) {
+      document.getElementById(`modal${id.charAt(0).toUpperCase() + id.slice(1)}`).classList.remove('active');
+    }
+
+    function saveContractorPrefs() {
+      const addr = document.getElementById('userPrefAddress').value;
+      const phone = document.getElementById('userPrefPhone').value;
+      alert(`Contractor preferences saved!\nDelivery Address: ${addr}\nContact Phone: ${phone}`);
+      closeModal('contractorSettings');
+    }
+
+    async function loadHistoryModal() {
+      try {
+        const res = await fetch('/api/v1/agent/inquiries?limit=30');
+        const items = await res.json();
+        const tbody = document.getElementById('historyModalBody');
+        tbody.innerHTML = '';
+        items.forEach(i => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><code>${i.inquiry_id}</code></td>
+            <td><span class="decision-badge-pill ${i.decision}">${i.decision}</span></td>
+            <td style="font-weight: 700;">${Math.round(i.qualification_score)}</td>
+            <td>${Math.round(i.confidence_score * 100)}%</td>
+            <td style="color: var(--text-muted);">${new Date(i.created_at).toLocaleTimeString()}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {}
+    }
+
+    async function loadSettingsStatus() {
+      try {
+        const res = await fetch('/api/v1/agent/settings/status');
+        const data = await res.json();
+        const pill = document.getElementById('headerModePill');
+        const txt = document.getElementById('headerModeText');
+        const banner = document.getElementById('globalApiNotice');
+
+        if (data.has_key && data.execution_mode === 'LLM') {
+          pill.className = 'mode-pill llm';
+          txt.innerText = `LLM Engine: ${data.llm_provider} (${data.llm_model})`;
+          document.getElementById('settingApiKey').value = data.masked_key;
+          document.getElementById('settingProvider').value = data.llm_provider || 'gemini';
+          document.getElementById('settingModel').value = data.llm_model || 'gemini-1.5-flash';
+          if (banner) banner.style.display = 'none';
+        } else {
+          pill.className = 'mode-pill simulated';
+          txt.innerText = '⚠️ API Key Needed (Offline)';
+          if (banner) banner.style.display = 'flex';
+        }
+      } catch (e) {}
+    }
+
+    function handleProviderChange() {
+      const provider = document.getElementById('settingProvider').value;
+      const modelInput = document.getElementById('settingModel');
+      if (provider === 'gemini') {
+        modelInput.value = 'gemini-1.5-flash';
+      } else if (provider === 'openai') {
+        modelInput.value = 'gpt-4o-mini';
+      } else if (provider === 'anthropic') {
+        modelInput.value = 'claude-3-5-sonnet-20241022';
+      }
+    }
+
+    async function saveApiKeySettings() {
+      const apiKey = document.getElementById('settingApiKey').value.trim();
+      const provider = document.getElementById('settingProvider').value;
+      const model = document.getElementById('settingModel').value.trim();
+
+      try {
+        const res = await fetch('/api/v1/agent/settings/api-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: apiKey, provider: provider, model: model }),
+        });
+        const data = await res.json();
+        const statusElem = document.getElementById('apiKeySaveStatus');
+        if (data.has_key) {
+          statusElem.innerText = `✓ Saved globally for all users! Active: ${data.llm_provider}`;
+        } else {
+          statusElem.innerText = '✓ Offline mode active';
+        }
+        setTimeout(() => statusElem.innerText = '', 3500);
+        loadSettingsStatus();
+      } catch (e) {
+        alert('Failed to save settings: ' + e.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>

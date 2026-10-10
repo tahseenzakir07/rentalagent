@@ -1,0 +1,49 @@
+{
+  "provider_id": "PROV-001",
+  "mandatory_fields": [
+    "equipment_type",
+    "start_date",
+    "duration_days"
+  ],
+  "rental_durations": {
+    "default_min_days": 1,
+    "heavy_equipment_min_days": {
+      "Excavator": 2,
+      "Bulldozer": 3,
+      "Wheel Loader": 2
+    },
+    "max_rental_days": 90
+  },
+  "site_access_rules": {
+    "min_heavy_access_width_m": 3.5,
+    "max_ground_slope_degrees": 20,
+    "restricted_keywords": [
+      "narrow alley",
+      "tight clearance",
+      "steep slope",
+      "power lines",
+      "hazardous waste",
+      "wetland",
+      "flood zone",
+      "soft mud",
+      "weight-restricted bridge"
+    ]
+  },
+  "operator_rules": {
+    "weight_threshold_tons_requiring_operator": 15.0,
+    "daily_operator_rate": 500.0,
+    "contractor_self_operate_requires_certification": true
+  },
+  "pricing_limits": {
+    "auto_quote_max_amount": 12000.0,
+    "delivery_base_charge": 250.0,
+    "sales_tax_pct": 0.0825
+  },
+  "mandatory_escalation_triggers": [
+    "TOOL_EXECUTION_FAILURE",
+    "INSPECTION_STATUS_FAIL",
+    "HAZARDOUS_SITE_CONDITION",
+    "UNRESOLVED_AVAILABILITY_CONFLICT",
+    "INSURANCE_LAPSED_OR_INVALID"
+  ]
+}

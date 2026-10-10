@@ -1,0 +1,106 @@
+[
+  {
+    "scenario_id": "SCENARIO-01",
+    "name": "Complete Standard Inquiry",
+    "description": "All required details provided, equipment available, standard site, budget sufficient.",
+    "expected_decision": "AUTO_QUOTE",
+    "request": {
+      "inquiry_id": "inq_demo_complete_01",
+      "contractor_id": "CON-101",
+      "provider_id": "PROV-001",
+      "contractor_message": "Need a 20-ton excavator for 4 days starting 2026-11-12 at 1200 East 7th St, Austin TX. Standard open site access with certified operator on our crew. Our budget is $8,000.",
+      "project_location": "1200 East 7th St, Austin, TX",
+      "metadata": {
+        "channel": "web_portal",
+        "urgency": "normal"
+      }
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-02",
+    "name": "Missing Dates and Capacity",
+    "description": "Inquiry is vague and missing required rental start date, duration, and capacity.",
+    "expected_decision": "REQUEST_INFO",
+    "request": {
+      "inquiry_id": "inq_demo_missing_02",
+      "contractor_id": "CON-102",
+      "provider_id": "PROV-001",
+      "contractor_message": "Looking to rent an excavator for our upcoming trenching project in Buda, TX. Can you give us pricing and availability?",
+      "project_location": "Buda, TX",
+      "metadata": {
+        "channel": "email",
+        "urgency": "low"
+      }
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-03",
+    "name": "Unavailable Equipment (Schedule Conflict)",
+    "description": "Requested 20-ton excavator is booked during 2026-10-18 to 2026-10-22. Suggests verified alternative.",
+    "expected_decision": "MANUAL_REVIEW",
+    "expected_counter_offer": true,
+    "request": {
+      "inquiry_id": "inq_demo_unavailable_03",
+      "contractor_id": "CON-101",
+      "provider_id": "PROV-001",
+      "contractor_message": "Urgent: Need a 20-ton excavator for 4 days from 2026-10-18 to 2026-10-22 at our Pflugerville jobsite. Dry hire, self-operated.",
+      "project_location": "Pflugerville, TX",
+      "metadata": {
+        "channel": "phone_transcript",
+        "urgency": "high"
+      }
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-04",
+    "name": "Site Access and Safety Risk",
+    "description": "Requested heavy excavator with restrictive 2.2m access alley and overhead power lines.",
+    "expected_decision": "MANUAL_REVIEW",
+    "request": {
+      "inquiry_id": "inq_demo_site_risk_04",
+      "contractor_id": "CON-102",
+      "provider_id": "PROV-001",
+      "contractor_message": "Need a 20-ton excavator for 3 days starting 2026-11-15 in downtown Austin. The site access is through a very narrow alley with only 2.2 meters clearance next to active overhead power lines with a steep slope.",
+      "project_location": "Downtown Austin, TX",
+      "metadata": {
+        "channel": "web_portal",
+        "urgency": "high"
+      }
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-05",
+    "name": "Budget Constraint Exceeded",
+    "description": "Contractor budget is $1,800 for 5 days of 20-ton excavator (rate exceeds budget). Alternative proposed.",
+    "expected_decision": "MANUAL_REVIEW",
+    "expected_counter_offer": true,
+    "request": {
+      "inquiry_id": "inq_demo_budget_05",
+      "contractor_id": "CON-102",
+      "provider_id": "PROV-001",
+      "contractor_message": "Looking to rent a 20-ton excavator for 5 days starting 2026-11-20 in San Marcos. Our maximum total budget is strictly capped at $1,800. Can you accommodate this?",
+      "project_location": "San Marcos, TX",
+      "metadata": {
+        "channel": "web_portal",
+        "urgency": "normal"
+      }
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-06",
+    "name": "Verification Tool Failure / System Conflict",
+    "description": "Simulated hardware telemetry or inventory verification service failure triggers fail-closed policy.",
+    "expected_decision": "MANUAL_REVIEW",
+    "request": {
+      "inquiry_id": "inq_demo_tool_failure_06",
+      "contractor_id": "CON-103",
+      "provider_id": "PROV-001",
+      "contractor_message": "Need a 60-ft boom lift for 2 days starting 2026-11-10 in Kyle, TX. SIMULATE_TOOL_FAILURE_TEST",
+      "project_location": "Kyle, TX",
+      "metadata": {
+        "channel": "api_test",
+        "simulate_tool_error": true
+      }
+    }
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
+    "business_details": {
+      "address": "4500 Industrial Blvd, Austin, TX 78744",
+      "dispatch_phone": "+1-512-555-0199",
+      "operating_license": "TX-HE-2024-8832",
+      "business_hours": "06:00 - 18:00 CST"
+    },
+    "pricing_rules": {
+      "sales_tax_rate": 0.0825,
+      "base_delivery_fee": 250.0,
+      "per_mile_delivery_rate": 4.5,
+      "certified_operator_daily_rate": 500.0,
+      "high_value_quote_threshold": 12000.0,
+      "weekend_surcharge_rate": 0.15
+    },
+    "policies": {
+      "max_single_rental_days": 90,
+      "operator_mandate_weight_tons": 15.0,
+      "unattended_site_inspection_required": true,
+      "hazardous_site_escalation": true,
+      "strict_budget_threshold_enforced": true
+    }
+  }
+]
