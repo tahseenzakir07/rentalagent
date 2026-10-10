@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — Rentaliq AI Equipment Rental Decision Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ======================================================== */
+    /* CLEAN SOFT-WHITE DESIGN SYSTEM CONSISTENT WITH RENTALIQ  */
+    /* ======================================================== */
+    :root {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f1f5f9;
+      --bg-hover: #f8fafc;
+      
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --border-focus: rgba(99, 102, 241, 0.45);
+      
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-soft: #eef2ff;
+      --primary-border: #c7d2fe;
+      
+      --success: #059669;
+      --success-soft: #ecfdf5;
+      --success-border: #a7f3d0;
+      
+      --warning: #d97706;
+      --warning-soft: #fffbeb;
+      --warning-border: #fde68a;
+      
+      --danger: #e11d48;
+      --danger-soft: #fff1f2;
+      --danger-border: #fecdd3;
+      
+      --cyan: #0284c7;
+      --cyan-soft: #f0f9ff;
+      --cyan-border: #bae6fd;
+
+      --purple: #7c3aed;
+      --purple-soft: #f5f3ff;
+      --purple-border: #ddd6fe;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+
+      --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+      --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Global Header */
+    .app-header {
+      height: 60px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-xs);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 1.15rem;
+      box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);
+      text-decoration: none;
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      margin-left: 0.5rem;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .nav-link {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .nav-link:hover {
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    /* Page Layout Container */
+    .page-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 1.25rem;
+      background: radial-gradient(circle at 50% 10%, rgba(238, 242, 255, 0.8) 0%, rgba(248, 250, 252, 0) 65%);
+    }
+
+    /* Registration Card Container */
+    .auth-card {
+      width: 100%;
+      max-width: 540px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2.25rem 2rem;
+      box-shadow: var(--shadow-modal);
+      position: relative;
+    }
+
+    .auth-card-head {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .auth-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.025em;
+      margin-bottom: 0.35rem;
+    }
+    .auth-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Role Pill Selector */
+    .role-selector {
+      display: flex;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 1.5rem;
+      gap: 4px;
+    }
+    .role-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .role-btn.active {
+      background: var(--bg-surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+      font-weight: 700;
+    }
+
+    /* Form Grid */
+    .form-grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .form-group {
+      margin-bottom: 1.15rem;
+      position: relative;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.68rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .form-input:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .form-input.is-invalid {
+      border-color: var(--danger);
+      background: #fff8f8;
+    }
+    .field-error {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--danger);
+      margin-top: 0.35rem;
+      display: none;
+    }
+    .field-error.visible {
+      display: block;
+    }
+
+    /* Checkbox & Options */
+    .terms-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      margin: 1.25rem 0 1.5rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .checkbox-input {
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      height: 46px;
+      background: var(--primary);
+      border: none;
+      border-radius: 10px;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.94rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    }
+    .btn-submit:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Alert Banner */
+    .alert-box {
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      display: none;
+    }
+    .alert-box.success {
+      background: var(--success-soft);
+      border: 1px solid var(--success-border);
+      color: var(--success);
+      display: block;
+    }
+
+    /* Footer */
+    .auth-footer {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .auth-footer a {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: none;
+      margin-left: 0.35rem;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 580px) {
+      .form-grid-two { grid-template-columns: 1fr; gap: 0; }
+      .auth-card { padding: 1.75rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-left">
+      <a href="/" class="brand-logo" title="Rentaliq Home">R</a>
+      <div style="display: flex; align-items: center;">
+        <a href="/" class="brand-title">Rentaliq</a>
+        <span class="brand-badge">AI AGENT</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <a href="/login" class="nav-link">
+        <span>Already registered? Sign In →</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="page-wrapper">
+    <div class="auth-card">
+      <div class="auth-card-head">
+        <h1 class="auth-title">Create Account</h1>
+        <p class="auth-subtitle">Join the automated equipment rental platform. Get instant machine availability and policy-backed quotes.</p>
+      </div>
+
+      <!-- Role Selector -->
+      <div class="role-selector">
+        <button type="button" class="role-btn active" id="btnRoleContractor" onclick="switchRegRole('contractor')">
+          <span>👷 Contractor</span>
+        </button>
+        <button type="button" class="role-btn" id="btnRoleProvider" onclick="switchRegRole('provider')">
+          <span>🏢 Equipment Provider</span>
+        </button>
+      </div>
+
+      <!-- Registration Form -->
+      <form id="registerForm" novalidate onsubmit="handleRegisterSubmit(event)">
+        <div class="form-grid-two">
+          <div class="form-group">
+            <label class="form-label" for="regFullName">Full Name</label>
+            <input type="text" id="regFullName" class="form-input" placeholder="e.g. Marcus Vance" required>
+            <div id="errFullName" class="field-error">Name is required.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regCompany">Company Name</label>
+            <input type="text" id="regCompany" class="form-input" placeholder="e.g. Austin Metro LLC" required>
+            <div id="errCompany" class="field-error">Company name is required.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regEmail">Work Email</label>
+          <input type="email" id="regEmail" class="form-input" placeholder="name@company.com" required>
+          <div id="errEmail" class="field-error">Valid email address is required.</div>
+        </div>
+
+        <div class="form-grid-two">
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <input type="password" id="regPassword" class="form-input" placeholder="At least 6 characters" required>
+            <div id="errPassword" class="field-error">Password must be at least 6 characters.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regConfirmPassword">Confirm Password</label>
+            <input type="password" id="regConfirmPassword" class="form-input" placeholder="Re-enter password" required>
+            <div id="errConfirmPassword" class="field-error">Passwords must match.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regInsurancePolicy">COI / General Liability Policy # <span style="font-weight: 400; color: var(--text-dim);">(Optional)</span></label>
+          <input type="text" id="regInsurancePolicy" class="form-input" placeholder="e.g. TX-GL-89102">
+        </div>
+
+        <div class="terms-row">
+          <input type="checkbox" id="termsCheck" class="checkbox-input" required>
+          <label for="termsCheck">I agree to Rentaliq terms of service and automated equipment safety decision protocols.</label>
+        </div>
+        <div id="errTerms" class="field-error" style="margin-top: -1rem; margin-bottom: 1rem;">You must accept the terms of service.</div>
+
+        <button type="submit" id="btnRegisterSubmit" class="btn-submit">
+          Create Account
+        </button>
+
+        <div id="regAlert" class="alert-box success"></div>
+      </form>
+
+      <footer class="auth-footer">
+        <span>Already have an account?</span>
+        <a href="/login">Sign In here</a>
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    let activeRole = 'contractor';
+
+    function switchRegRole(role) {
+      activeRole = role;
+      document.getElementById('btnRoleContractor').classList.toggle('active', role === 'contractor');
+      document.getElementById('btnRoleProvider').classList.toggle('active', role === 'provider');
+    }
+
+    function handleRegisterSubmit(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('regFullName').value.trim();
+      const company = document.getElementById('regCompany').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass = document.getElementById('regPassword').value;
+      const confirmPass = document.getElementById('regConfirmPassword').value;
+      const terms = document.getElementById('termsCheck').checked;
+
+      let valid = true;
+
+      // Full Name
+      const errFullName = document.getElementById('errFullName');
+      if (!name) { errFullName.classList.add('visible'); valid = false; }
+      else { errFullName.classList.remove('visible'); }
+
+      // Company
+      const errCompany = document.getElementById('errCompany');
+      if (!company) { errCompany.classList.add('visible'); valid = false; }
+      else { errCompany.classList.remove('visible'); }
+
+      // Email
+      const errEmail = document.getElementById('errEmail');
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEmail.classList.add('visible'); valid = false;
+      } else {
+        errEmail.classList.remove('visible');
+      }
+
+      // Password
+      const errPass = document.getElementById('errPassword');
+      if (!pass || pass.length < 6) {
+        errPass.classList.add('visible'); valid = false;
+      } else {
+        errPass.classList.remove('visible');
+      }
+
+      // Confirm Password
+      const errConfirm = document.getElementById('errConfirmPassword');
+      if (pass !== confirmPass) {
+        errConfirm.classList.add('visible'); valid = false;
+      } else {
+        errConfirm.classList.remove('visible');
+      }
+
+      // Terms
+      const errTerms = document.getElementById('errTerms');
+      if (!terms) {
+        errTerms.classList.add('visible'); valid = false;
+      } else {
+        errTerms.classList.remove('visible');
+      }
+
+      if (!valid) return;
+
+      const btn = document.getElementById('btnRegisterSubmit');
+      btn.textContent = 'Registering account...';
+      btn.style.opacity = '0.8';
+
+      setTimeout(() => {
+        btn.textContent = 'Account Created!';
+        const alertBox = document.getElementById('regAlert');
+        alertBox.innerHTML = `<strong>Registration Simulated:</strong> Account for ${name} (${company}) created. Redirecting to Login...`;
+        alertBox.style.display = 'block';
+
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
+      }, 700);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Rentaliq AI Equipment Rental Decision Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ======================================================== */
+    /* CLEAN SOFT-WHITE DESIGN SYSTEM CONSISTENT WITH RENTALIQ  */
+    /* ======================================================== */
+    :root {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f1f5f9;
+      --bg-hover: #f8fafc;
+      
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --border-focus: rgba(99, 102, 241, 0.45);
+      
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-soft: #eef2ff;
+      --primary-border: #c7d2fe;
+      
+      --success: #059669;
+      --success-soft: #ecfdf5;
+      --success-border: #a7f3d0;
+      
+      --warning: #d97706;
+      --warning-soft: #fffbeb;
+      --warning-border: #fde68a;
+      
+      --danger: #e11d48;
+      --danger-soft: #fff1f2;
+      --danger-border: #fecdd3;
+      
+      --cyan: #0284c7;
+      --cyan-soft: #f0f9ff;
+      --cyan-border: #bae6fd;
+
+      --purple: #7c3aed;
+      --purple-soft: #f5f3ff;
+      --purple-border: #ddd6fe;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+
+      --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+      --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Global Header */
+    .app-header {
+      height: 60px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-xs);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 1.15rem;
+      box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);
+      text-decoration: none;
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      margin-left: 0.5rem;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .nav-link {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .nav-link:hover {
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    /* Page Layout Container */
+    .page-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 1.25rem;
+      background: radial-gradient(circle at 50% 10%, rgba(238, 242, 255, 0.8) 0%, rgba(248, 250, 252, 0) 65%);
+    }
+
+    /* Status / Mock Integration Banner */
+    .integration-banner {
+      width: 100%;
+      max-width: 470px;
+      background: var(--cyan-soft);
+      border: 1px solid var(--cyan-border);
+      color: #0369a1;
+      padding: 0.65rem 0.95rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      line-height: 1.45;
+    }
+    .integration-banner svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Login Card Container */
+    .auth-card {
+      width: 100%;
+      max-width: 470px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2.25rem 2rem;
+      box-shadow: var(--shadow-modal);
+      position: relative;
+    }
+
+    .auth-card-head {
+      margin-bottom: 1.75rem;
+      text-align: center;
+    }
+    .auth-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.025em;
+      margin-bottom: 0.4rem;
+    }
+    .auth-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Role Pill Selector */
+    .role-selector {
+      display: flex;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 1.5rem;
+      gap: 4px;
+    }
+    .role-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .role-btn.active {
+      background: var(--bg-surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+      font-weight: 700;
+    }
+
+    /* Fast Demo Autofill Helper */
+    .demo-autofill-box {
+      background: var(--bg-card-subtle);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.85rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .demo-autofill-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .demo-pill-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .demo-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .demo-chip:hover {
+      border-color: var(--primary-border);
+      background: var(--primary-soft);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    /* Form Groups & Inputs */
+    .form-group {
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+    .form-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.45rem;
+    }
+    .form-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .forgot-link {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.15s;
+      cursor: pointer;
+    }
+    .forgot-link:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-icon {
+      position: absolute;
+      left: 0.85rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.72rem 0.85rem 0.72rem 2.45rem;
+      border-radius: 9px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .form-input.has-toggle {
+      padding-right: 2.75rem;
+    }
+    .form-input:focus {
+      outline: none;
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .form-input.is-invalid {
+      border-color: var(--danger);
+      background: #fff8f8;
+    }
+    .form-input.is-invalid:focus {
+      box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
+    }
+
+    /* Password Toggle Button */
+    .toggle-password-btn {
+      position: absolute;
+      right: 0.65rem;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      padding: 0.35rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, background 0.15s;
+    }
+    .toggle-password-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-card-subtle);
+    }
+    .toggle-password-btn:focus-visible {
+      outline: 2px solid var(--primary);
+    }
+
+    /* Inline Validation Feedback */
+    .field-error {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--danger);
+      margin-top: 0.4rem;
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .field-error.visible {
+      display: flex;
+    }
+
+    /* Checkbox & Options */
+    .remember-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .checkbox-input {
+      appearance: none;
+      width: 17px;
+      height: 17px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-base);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      transition: all 0.15s;
+    }
+    .checkbox-input:checked {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .checkbox-input:checked::before {
+      content: "";
+      width: 9px;
+      height: 5px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(-45deg) translate(1px, -1px);
+    }
+    .checkbox-input:focus-visible {
+      outline: 2px solid var(--primary);
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      height: 46px;
+      background: var(--primary);
+      border: none;
+      border-radius: 10px;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.94rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    }
+    .btn-submit:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+    }
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+    .btn-submit.loading {
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.75s linear infinite;
+      display: none;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .btn-submit.loading .spinner {
+      display: inline-block;
+    }
+    .btn-submit.loading .btn-text-content {
+      display: none;
+    }
+
+    /* Notification Alert Box */
+    .alert-box {
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      display: none;
+      align-items: flex-start;
+      gap: 0.55rem;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .alert-box.success {
+      background: var(--success-soft);
+      border: 1px solid var(--success-border);
+      color: var(--success);
+      display: flex;
+    }
+    .alert-box.error {
+      background: var(--danger-soft);
+      border: 1px solid var(--danger-border);
+      color: var(--danger);
+      display: flex;
+    }
+
+    /* Auth Card Footer */
+    .auth-footer {
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .register-link {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: none;
+      margin-left: 0.35rem;
+      transition: color 0.15s;
+    }
+    .register-link:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    /* Collapsible Backend Integration Docs Details */
+    .integration-details {
+      width: 100%;
+      max-width: 470px;
+      margin-top: 1.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .integration-summary {
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: var(--bg-card-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .integration-content {
+      padding: 0.9rem 1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      border-top: 1px solid var(--border);
+      background: var(--bg-surface);
+    }
+    .code-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      color: var(--primary);
+    }
+
+    /* Simple Modal / Toast for Forgot Password */
+    .toast-popup {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: #fff;
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      box-shadow: var(--shadow-modal);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      z-index: 100;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.25s ease;
+      pointer-events: none;
+    }
+    .toast-popup.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 520px) {
+      .auth-card {
+        padding: 1.75rem 1.25rem 1.5rem;
+      }
+      .app-header {
+        padding: 0 1rem;
+      }
+      .brand-badge {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <a href="/" class="brand-logo" title="Rentaliq Home">R</a>
+      <div style="display: flex; align-items: center;">
+        <a href="/" class="brand-title">Rentaliq</a>
+        <span class="brand-badge">AI AGENT</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <a href="/" class="nav-link" id="navReturnDashboard">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        <span>Rental Dashboard</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Main Content Area -->
+  <main class="page-wrapper">
+
+    <!-- Non-intrusive status notice regarding auth endpoint integration -->
+    <div class="integration-banner" role="status">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <div>
+        <strong>Frontend Interface Active:</strong> Complete responsive UI with client validation & credential autofill. Connects to backend <span class="code-badge">/api/v1/auth/login</span> once configured.
+      </div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="auth-card">
+      <div class="auth-card-head">
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">Sign in to coordinate heavy equipment rentals, review automated quotes, and track fleet availability.</p>
+      </div>
+
+      <!-- Account Role Switcher -->
+      <div class="role-selector" role="tablist" aria-label="Select user role">
+        <button type="button" class="role-btn active" id="roleBtnContractor" role="tab" aria-selected="true" onclick="selectRole('contractor')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span>Contractor</span>
+        </button>
+        <button type="button" class="role-btn" id="roleBtnProvider" role="tab" aria-selected="false" onclick="selectRole('provider')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span>Equipment Provider</span>
+        </button>
+      </div>
+
+      <!-- 1-Click Demo Fill for Testing Convenience -->
+      <div class="demo-autofill-box">
+        <div class="demo-autofill-title">
+          <span>⚡ Fast Demo Credentials</span>
+          <span style="font-weight: 500; font-size: 0.68rem; color: var(--text-dim); text-transform: none;">Click to pre-fill</span>
+        </div>
+        <div class="demo-pill-group">
+          <button type="button" class="demo-chip" onclick="fillDemoCredentials('contractor')">
+            <span>🚜</span>
+            <span>Marcus Vance (Contractor)</span>
+          </button>
+          <button type="button" class="demo-chip" onclick="fillDemoCredentials('provider')">
+            <span>🏢</span>
+            <span>Apex Dispatch (Provider)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" novalidate onsubmit="handleFormSubmit(event)">
+
+        <!-- Email Field -->
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="loginEmail" class="form-label">
+              <span>Work Email</span>
+            </label>
+          </div>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </span>
+            <input 
+              type="email" 
+              id="loginEmail" 
+              name="email" 
+              class="form-input" 
+              placeholder="e.g. marcus@austinmetro.com" 
+              autocomplete="email"
+              required
+              oninput="handleInputClearError('loginEmail', 'emailError')"
+            >
+          </div>
+          <div id="emailError" class="field-error" role="alert">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="emailErrorText">Please provide a valid email address.</span>
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="loginPassword" class="form-label">
+              <span>Password</span>
+            </label>
+            <a href="javascript:void(0)" class="forgot-link" onclick="handleForgotPassword()" id="linkForgotPassword">Forgot password?</a>
+          </div>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </span>
+            <input 
+              type="password" 
+              id="loginPassword" 
+              name="password" 
+              class="form-input has-toggle" 
+              placeholder="Enter your password" 
+              autocomplete="current-password"
+              required
+              oninput="handleInputClearError('loginPassword', 'passwordError')"
+            >
+            <!-- Password Visibility Toggle Button -->
+            <button 
+              type="button" 
+              id="togglePasswordBtn" 
+              class="toggle-password-btn" 
+              aria-label="Show password as plain text" 
+              title="Toggle password visibility"
+              onclick="togglePasswordVisibility()"
+            >
+              <!-- Eye Icon (Default) -->
+              <svg id="eyeIconOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <!-- Eye Off Icon (Hidden Initially) -->
+              <svg id="eyeIconClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+          <div id="passwordError" class="field-error" role="alert">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="passwordErrorText">Password is required (minimum 6 characters).</span>
+          </div>
+        </div>
+
+        <!-- Remember Me Checkbox -->
+        <div class="remember-row">
+          <label class="checkbox-label" for="rememberMeCheckbox">
+            <input type="checkbox" id="rememberMeCheckbox" class="checkbox-input" checked>
+            <span>Remember this device for 30 days</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="btnSubmitLogin" class="btn-submit">
+          <span class="spinner" id="loginSpinner" aria-hidden="true"></span>
+          <span class="btn-text-content" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>Sign In to Rentaliq</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </span>
+        </button>
+
+        <!-- Dynamic Success / Error Banner -->
+        <div id="loginAlertBox" class="alert-box" role="status">
+          <svg id="alertIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+          <div id="alertMessageContent"></div>
+        </div>
+
+      </form>
+
+      <!-- Registration Page Link -->
+      <footer class="auth-footer">
+        <span>Don't have a Rentaliq account?</span>
+        <a href="/register" class="register-link" id="linkToRegister">Create an account →</a>
+      </footer>
+
+    </div>
+
+    <!-- Collapsible Technical Backend Architecture Note -->
+    <details class="integration-details">
+      <summary class="integration-summary">
+        <span>⚙️ Backend Auth Integration Blueprint</span>
+        <span style="font-size: 0.72rem; color: var(--primary);">Specifications</span>
+      </summary>
+      <div class="integration-content">
+        <p><strong>Current State:</strong> Frontend validation & session emulation active. No secrets or tokens are exposed in static assets.</p>
+        <p style="margin-top: 0.4rem;"><strong>Required Backend Endpoints to wire:</strong></p>
+        <ul style="margin-left: 1.25rem; margin-top: 0.25rem;">
+          <li><span class="code-badge">POST /api/v1/auth/login</span> (validates credentials, returns JWT bearer token)</li>
+          <li><span class="code-badge">POST /api/v1/auth/register</span> (creates contractor/provider records in SQLite)</li>
+          <li><span class="code-badge">GET /api/v1/auth/me</span> (validates session headers for dashboard access)</li>
+        </ul>
+      </div>
+    </details>
+
+  </main>
+
+  <!-- Interactive Toast Notification -->
+  <div id="toastNotification" class="toast-popup" role="status" aria-live="polite">
+    <span id="toastIcon">ℹ️</span>
+    <span id="toastMessage">Message text</span>
+  </div>
+
+  <script>
+    /* ======================================================== */
+    /* STATE & FORM CONTROLLER                                  */
+    /* ======================================================== */
+    let currentSelectedRole = 'contractor';
+    let isPasswordVisible = false;
+
+    // 1. Role Toggle Handler
+    function selectRole(role) {
+      currentSelectedRole = role;
+      const btnContractor = document.getElementById('roleBtnContractor');
+      const btnProvider = document.getElementById('roleBtnProvider');
+      
+      if (role === 'contractor') {
+        btnContractor.classList.add('active');
+        btnContractor.setAttribute('aria-selected', 'true');
+        btnProvider.classList.remove('active');
+        btnProvider.setAttribute('aria-selected', 'false');
+      } else {
+        btnProvider.classList.add('active');
+        btnProvider.setAttribute('aria-selected', 'true');
+        btnContractor.classList.remove('active');
+        btnContractor.setAttribute('aria-selected', 'false');
+      }
+    }
+
+    // 2. Fast Demo Pre-Fill
+    function fillDemoCredentials(role) {
+      selectRole(role);
+      const emailInput = document.getElementById('loginEmail');
+      const passwordInput = document.getElementById('loginPassword');
+      
+      if (role === 'contractor') {
+        emailInput.value = 'marcus.vance@austinmetro.com';
+        passwordInput.value = 'Excavator2026!';
+      } else {
+        emailInput.value = 'dispatcher@apexheavyequipment.com';
+        passwordInput.value = 'ApexFleet#1';
+      }
+
+      // Clear any prior errors
+      handleInputClearError('loginEmail', 'emailError');
+      handleInputClearError('loginPassword', 'passwordError');
+      hideAlert();
+
+      showToast('Prefilled credentials for ' + (role === 'contractor' ? 'Marcus Vance' : 'Apex Dispatch'));
+    }
+
+    // 3. Password Visibility Toggle
+    function togglePasswordVisibility() {
+      const passwordInput = document.getElementById('loginPassword');
+      const toggleBtn = document.getElementById('togglePasswordBtn');
+      const eyeOpen = document.getElementById('eyeIconOpen');
+      const eyeClosed = document.getElementById('eyeIconClosed');
+
+      isPasswordVisible = !isPasswordVisible;
+
+      if (isPasswordVisible) {
+        passwordInput.type = 'text';
+        eyeOpen.style.display = 'none';
+        eyeClosed.style.display = 'inline';
+        toggleBtn.setAttribute('aria-label', 'Hide password');
+      } else {
+        passwordInput.type = 'password';
+        eyeOpen.style.display = 'inline';
+        eyeClosed.style.display = 'none';
+        toggleBtn.setAttribute('aria-label', 'Show password as plain text');
+      }
+    }
+
+    // 4. Input Error Clearing on Typing
+    function handleInputClearError(inputId, errorContainerId) {
+      const input = document.getElementById(inputId);
+      const errorContainer = document.getElementById(errorContainerId);
+      if (input) input.classList.remove('is-invalid');
+      if (errorContainer) errorContainer.classList.remove('visible');
+    }
+
+    // 5. Form Validation Logic
+    function validateForm(email, password) {
+      let isValid = true;
+      const emailInput = document.getElementById('loginEmail');
+      const passwordInput = document.getElementById('loginPassword');
+      const emailError = document.getElementById('emailError');
+      const passwordError = document.getElementById('passwordError');
+      const emailErrorText = document.getElementById('emailErrorText');
+      const passwordErrorText = document.getElementById('passwordErrorText');
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || email.trim() === '') {
+        emailInput.classList.add('is-invalid');
+        emailErrorText.textContent = 'Email address is required.';
+        emailError.classList.add('visible');
+        isValid = false;
+      } else if (!emailRegex.test(email.trim())) {
+        emailInput.classList.add('is-invalid');
+        emailErrorText.textContent = 'Please enter a valid email format (e.g., name@domain.com).';
+        emailError.classList.add('visible');
+        isValid = false;
+      } else {
+        emailInput.classList.remove('is-invalid');
+        emailError.classList.remove('visible');
+      }
+
+      // Password validation
+      if (!password || password.trim() === '') {
+        passwordInput.classList.add('is-invalid');
+        passwordErrorText.textContent = 'Password is required.';
+        passwordError.classList.add('visible');
+        isValid = false;
+      } else if (password.length < 6) {
+        passwordInput.classList.add('is-invalid');
+        passwordErrorText.textContent = 'Password must be at least 6 characters long.';
+        passwordError.classList.add('visible');
+        isValid = false;
+      } else {
+        passwordInput.classList.remove('is-invalid');
+        passwordError.classList.remove('visible');
+      }
+
+      return isValid;
+    }
+
+    // 6. Submit Handling
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      hideAlert();
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const rememberMe = document.getElementById('rememberMeCheckbox').checked;
+      const submitBtn = document.getElementById('btnSubmitLogin');
+
+      if (!validateForm(email, password)) {
+        return;
+      }
+
+      // Enter loading state
+      submitBtn.classList.add('loading');
+
+      // Emulate authentication verification delay
+      setTimeout(() => {
+        submitBtn.classList.remove('loading');
+
+        // Store session state in localStorage for convenience
+        try {
+          const userSession = {
+            email: email,
+            role: currentSelectedRole,
+            signedInAt: new Date().toISOString(),
+            rememberMe: rememberMe,
+            name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, c => c.toUpperCase())
+          };
+          localStorage.setItem('rentaliq_active_user', JSON.stringify(userSession));
+        } catch (e) {
+          console.warn('LocalStorage unavailable:', e);
+        }
+
+        // Show success state
+        showAlert(
+          'success',
+          `<strong>Sign-in Verified!</strong> Welcome, ${email}. Redirecting to Rental Dashboard...`
+        );
+
+        // Redirect to dashboard after brief delay
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1200);
+
+      }, 650);
+    }
+
+    // 7. Alert Management
+    function showAlert(type, htmlMessage) {
+      const alertBox = document.getElementById('loginAlertBox');
+      const content = document.getElementById('alertMessageContent');
+      const icon = document.getElementById('alertIcon');
+
+      alertBox.className = 'alert-box ' + type;
+      content.innerHTML = htmlMessage;
+
+      if (type === 'success') {
+        icon.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>';
+      } else {
+        icon.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
+      }
+    }
+
+    function hideAlert() {
+      const alertBox = document.getElementById('loginAlertBox');
+      alertBox.className = 'alert-box';
+      alertBox.style.display = 'none';
+    }
+
+    // 8. Forgot Password Prompt Handler
+    function handleForgotPassword() {
+      const email = document.getElementById('loginEmail').value.trim();
+      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast(`Reset instructions will be dispatched to ${email} once email delivery service is configured.`);
+      } else {
+        showToast('Enter your work email first, then click Forgot Password to receive a reset token.');
+        document.getElementById('loginEmail').focus();
+      }
+    }
+
+    // 9. Toast Notification Helper
+    let toastTimeout;
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMessage');
+      toastMsg.textContent = message;
+      toast.classList.add('visible');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

@@ -121,18 +121,37 @@ def list_contractors() -> List[Dict[str, Any]]:
     description="Approve, reject, or attach notes to a manual review inquiry.",
 )
 def review_inquiry(inquiry_id: str, action_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Update manual review state for human-in-the-loop escalation."""
-    record = default_repository.get_inquiry_evaluation(inquiry_id)
+    """Update manual review state for human-in-the-loop escalation and persist to database."""
+    action = action_data.get("action", "APPROVED")  # APPROVED, REJECTED, COUNTER_OFFER
+    notes = action_data.get("notes", "Reviewed by equipment dispatch manager.")
+    record = default_repository.update_inquiry_review(inquiry_id, action=action, notes=notes)
     if not record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Inquiry '{inquiry_id}' not found.",
         )
-    action = action_data.get("action", "APPROVED")  # APPROVED, REJECTED, MODIFIED
-    notes = action_data.get("notes", "Reviewed by equipment dispatch manager.")
-    record["manual_review_status"] = action
-    record["manual_review_notes"] = notes
     return {"status": "success", "inquiry_id": inquiry_id, "action": action, "notes": notes}
+
+
+@router.delete(
+    "/inquiries/{inquiry_id}",
+    response_model=Dict[str, Any],
+    summary="Delete inquiry evaluation",
+    description="Permanently delete an inquiry evaluation from the database.",
+)
+def delete_inquiry(inquiry_id: str) -> Dict[str, Any]:
+    """Delete an inquiry evaluation by ID."""
+    deleted = default_repository.delete_inquiry_evaluation(inquiry_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Inquiry '{inquiry_id}' not found.",
+        )
+    return {
+        "status": "success",
+        "message": f"Inquiry '{inquiry_id}' deleted successfully.",
+        "inquiry_id": inquiry_id,
+    }
 
 
 @router.post(

@@ -258,6 +258,8 @@ class LLMInquiryParser(InquiryParser):
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.0,
+                num_retries=0,
+                request_timeout=6.0,
             )
             raw_content = completion.choices[0].message.content or "{}"
             parsed_dict = self._clean_and_parse_json(raw_content)

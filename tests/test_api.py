@@ -108,3 +108,61 @@ def test_update_and_get_api_key_settings():
     client.post("/api/v1/agent/settings/api-key", json={"api_key": "", "provider": "openai", "model": "gpt-4o-mini"})
 
 
+def test_login_page_endpoint():
+    response = client.get("/login")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Sign In" in response.text
+    assert "loginEmail" in response.text
+    assert "loginPassword" in response.text
+    assert "togglePasswordBtn" in response.text
+    assert "/register" in response.text
+
+
+def test_register_page_endpoint():
+    response = client.get("/register")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Create Account" in response.text
+    assert "/login" in response.text
+
+
+def test_review_and_delete_inquiry_endpoints():
+    # 1. Create inquiry via evaluate endpoint
+    payload = {
+        "inquiry_id": "api_test_review_del_01",
+        "contractor_message": "Need excavator on steep rocky slope with high risk.",
+        "contractor_id": "CON-101",
+    }
+    eval_resp = client.post("/api/v1/agent/evaluate", json=payload)
+    assert eval_resp.status_code == 200
+
+    # 2. Review inquiry (Approve)
+    review_resp = client.post(
+        "/api/v1/agent/inquiries/api_test_review_del_01/review",
+        json={"action": "APPROVED", "notes": "Dispatcher approved exception"},
+    )
+    assert review_resp.status_code == 200
+    review_data = review_resp.json()
+    assert review_data["status"] == "success"
+    assert review_data["action"] == "APPROVED"
+
+    # Verify detail shows updated decision and notes
+    detail_resp = client.get("/api/v1/agent/inquiries/api_test_review_del_01")
+    assert detail_resp.status_code == 200
+    detail = detail_resp.json()
+    assert detail["response"]["decision"] == "AUTO_QUOTE"
+    assert detail["manual_review_status"] == "APPROVED"
+
+    # 3. Delete inquiry
+    del_resp = client.delete("/api/v1/agent/inquiries/api_test_review_del_01")
+    assert del_resp.status_code == 200
+    assert del_resp.json()["status"] == "success"
+
+    # 4. Verify inquiry is now 404
+    after_del_resp = client.get("/api/v1/agent/inquiries/api_test_review_del_01")
+    assert after_del_resp.status_code == 404
+
+
+
+

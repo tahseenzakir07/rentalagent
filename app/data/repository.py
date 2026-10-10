@@ -77,6 +77,18 @@ class Repository(ABC):
         """List historical inquiry evaluations."""
         pass
 
+    @abstractmethod
+    def delete_inquiry_evaluation(self, inquiry_id: str) -> bool:
+        """Delete an inquiry evaluation by ID."""
+        pass
+
+    @abstractmethod
+    def update_inquiry_review(
+        self, inquiry_id: str, action: str, notes: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Update inquiry review status and persist back to database."""
+        pass
+
 
 class SQLiteRepository(Repository):
     """Thread-safe SQLite repository backed by synthetic JSON master files."""
@@ -330,6 +342,76 @@ class SQLiteRepository(Repository):
             for r in rows:
                 results.append(dict(r))
         return results
+
+    def delete_inquiry_evaluation(self, inquiry_id: str) -> bool:
+        """Delete an inquiry evaluation by ID from persistent storage."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM inquiry_evaluations WHERE inquiry_id = ?;",
+                (inquiry_id,),
+            )
+            deleted = cursor.rowcount > 0
+            conn.commit()
+            if deleted:
+                logger.info("Deleted inquiry evaluation %s", inquiry_id)
+            return deleted
+
+    def update_inquiry_review(
+        self, inquiry_id: str, action: str, notes: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Update inquiry review status and persist back to database."""
+        now_iso = datetime.now(timezone.utc).isoformat()
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT payload_json FROM inquiry_evaluations WHERE inquiry_id = ? LIMIT 1;",
+                (inquiry_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            try:
+                payload = json.loads(row["payload_json"])
+            except Exception:
+                payload = {}
+
+            # Map the review action to the evaluation decision
+            action_upper = action.upper()
+            if action_upper in ("APPROVED", "ACCEPT"):
+                new_decision = "AUTO_QUOTE"
+            elif action_upper in ("REJECTED", "DECLINED", "REJECT"):
+                new_decision = "REJECTED"
+            elif action_upper in ("COUNTER_OFFER", "COUNTER"):
+                new_decision = "COUNTER_OFFER"
+            else:
+                new_decision = action_upper
+
+            payload["manual_review_status"] = action_upper
+            payload["manual_review_notes"] = notes or ""
+            if "response" in payload and isinstance(payload["response"], dict):
+                payload["response"]["decision"] = new_decision
+                payload["response"]["requires_human_approval"] = False
+                payload["response"]["manual_review_status"] = action_upper
+                payload["response"]["manual_review_notes"] = notes or ""
+
+            payload_str = json.dumps(payload, default=str)
+
+            cursor.execute(
+                """
+                UPDATE inquiry_evaluations
+                SET decision = ?,
+                    requires_human_approval = 0,
+                    payload_json = ?,
+                    updated_at = ?
+                WHERE inquiry_id = ?;
+                """,
+                (new_decision, payload_str, now_iso, inquiry_id),
+            )
+            conn.commit()
+            logger.info("Updated manual review for %s [action=%s, decision=%s]", inquiry_id, action_upper, new_decision)
+            return payload
 
 
 # Default repository instance

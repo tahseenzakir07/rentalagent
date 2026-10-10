@@ -43,8 +43,16 @@ app.include_router(agent_router)
 
 from pathlib import Path
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
-INDEX_HTML_PATH = Path(__file__).parent / "static" / "index.html"
+STATIC_DIR = Path(__file__).parent / "static"
+INDEX_HTML_PATH = STATIC_DIR / "index.html"
+LOGIN_HTML_PATH = STATIC_DIR / "login.html"
+REGISTER_HTML_PATH = STATIC_DIR / "register.html"
+
+# Mount static files directory
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -53,6 +61,22 @@ def serve_dashboard():
     if INDEX_HTML_PATH.exists():
         return HTMLResponse(content=INDEX_HTML_PATH.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Rentaliq Agent API</h1><p>Visit <a href='/docs'>/docs</a></p>")
+
+
+@app.get("/login", response_class=HTMLResponse, include_in_schema=False)
+def serve_login():
+    """Serve the contractor and provider login page."""
+    if LOGIN_HTML_PATH.exists():
+        return HTMLResponse(content=LOGIN_HTML_PATH.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Rentaliq Login</h1><p>Login page not found.</p>", status_code=404)
+
+
+@app.get("/register", response_class=HTMLResponse, include_in_schema=False)
+def serve_register():
+    """Serve the contractor and provider registration page."""
+    if REGISTER_HTML_PATH.exists():
+        return HTMLResponse(content=REGISTER_HTML_PATH.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Rentaliq Registration</h1><p>Registration page not found.</p>", status_code=404)
 
 
 @app.get("/health", summary="Service health check", tags=["System"])

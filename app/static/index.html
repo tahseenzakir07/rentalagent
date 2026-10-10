@@ -877,6 +877,11 @@
           Provider View
         </button>
       </div>
+
+      <!-- Sign In / Account Link -->
+      <a href="/login" class="menu-btn primary-action" id="headerLoginBtn" style="text-decoration: none; padding: 0.38rem 0.8rem; font-size: 0.8rem;" title="Sign in to your account">
+        <span>🔐</span> <span>Sign In</span>
+      </a>
     </div>
   </header>
 
@@ -1094,7 +1099,7 @@
                 Loading request details...
               </div>
 
-              <div id="reqDetailActions" style="display: flex; gap: 0.6rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <div id="reqDetailActions" style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
                 <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none; padding: 0.5rem 1rem;" onclick="actionProviderRequest('APPROVED')">
                   ✓ Approve & Dispatch
                 </button>
@@ -1103,6 +1108,9 @@
                 </button>
                 <button class="btn-quick-inquire" style="background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border); padding: 0.5rem 1rem;" onclick="actionProviderRequest('REJECTED')">
                   ✕ Decline
+                </button>
+                <button class="btn-quick-inquire" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 0.5rem 1rem;" onclick="deleteInquiryRequest()">
+                  🗑 Delete
                 </button>
               </div>
             </div>
@@ -1287,6 +1295,19 @@
       loadEquipmentCatalog();
       loadSettingsStatus();
       loadProviderData();
+
+      // Check if logged in via /login session
+      try {
+        const savedUser = localStorage.getItem('rentaliq_active_user');
+        if (savedUser) {
+          const userObj = JSON.parse(savedUser);
+          const loginBtn = document.getElementById('headerLoginBtn');
+          if (loginBtn && userObj.email) {
+            loginBtn.innerHTML = `<span>👤</span> <span>${escapeHtml(userObj.name || userObj.email.split('@')[0])}</span>`;
+            loginBtn.title = `Signed in as ${userObj.email} (${userObj.role}). Click to switch account.`;
+          }
+        }
+      } catch (e) {}
     });
 
     // ----------------------------------------------------
@@ -1569,7 +1590,20 @@
         });
 
         if (providerInquiries.length > 0) {
-          loadSelectedInquiryDetail(providerInquiries[0].inquiry_id);
+          const currentId = activeInquiryPayload ? activeInquiryPayload.inquiry_id : null;
+          const stillPresent = providerInquiries.some(i => i.inquiry_id === currentId);
+          loadSelectedInquiryDetail(stillPresent ? currentId : providerInquiries[0].inquiry_id);
+        } else {
+          activeInquiryPayload = null;
+          document.getElementById('reqDetailContractor').innerText = '—';
+          document.getElementById('reqDetailCompany').innerText = '—';
+          document.getElementById('reqDetailEquipment').innerText = '—';
+          document.getElementById('reqDetailDates').innerText = '—';
+          document.getElementById('reqDetailLocation').innerText = '—';
+          const badge = document.getElementById('reqDetailDecision');
+          badge.className = 'decision-badge-pill';
+          badge.innerText = 'NONE';
+          document.getElementById('reqDetailChatBubble').innerHTML = '<div style="color: var(--text-muted); padding: 1rem 0;">No inquiries available.</div>';
         }
 
         renderDispatchedTable();
@@ -1590,8 +1624,10 @@
     }
 
     async function loadSelectedInquiryDetail(inquiryId) {
+      if (!inquiryId) return;
       try {
-        const res = await fetch(`/api/v1/agent/inquiries/${inquiryId}`);
+        const res = await fetch(`/api/v1/agent/inquiries/${encodeURIComponent(inquiryId)}`);
+        if (!res.ok) throw new Error('Inquiry not found');
         const data = await res.json();
         activeInquiryPayload = data;
 
@@ -1620,19 +1656,53 @@
       }
     }
 
-    async function actionProviderRequest(action) {
-      if (!activeInquiryPayload) return;
-      const inqId = activeInquiryPayload.inquiry_id;
+    async function actionProviderRequest(action, inqId = null) {
+      const targetId = inqId || (activeInquiryPayload ? activeInquiryPayload.inquiry_id : null);
+      if (!targetId) {
+        alert('No inquiry selected.');
+        return;
+      }
       try {
-        await fetch(`/api/v1/agent/inquiries/${inqId}/review`, {
+        const res = await fetch(`/api/v1/agent/inquiries/${encodeURIComponent(targetId)}/review`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: action, notes: `Actioned as ${action} from Provider Requests panel` }),
+          body: JSON.stringify({ action: action, notes: `Actioned as ${action} from Provider panel` }),
         });
-        alert(`Inquiry ${inqId} successfully updated to ${action}!`);
-        loadProviderData();
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || 'Failed to update review status');
+        }
+        alert(`Inquiry ${targetId} successfully updated to ${action}!`);
+        await loadProviderData();
       } catch (e) {
         alert('Action error: ' + e.message);
+      }
+    }
+
+    async function deleteInquiryRequest(inqId = null) {
+      const targetId = inqId || (activeInquiryPayload ? activeInquiryPayload.inquiry_id : null);
+      if (!targetId) {
+        alert('No inquiry selected.');
+        return;
+      }
+      if (!confirm(`Are you sure you want to permanently delete inquiry ${targetId}?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/agent/inquiries/${encodeURIComponent(targetId)}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || 'Failed to delete inquiry');
+        }
+        alert(`Inquiry ${targetId} permanently deleted!`);
+        if (activeInquiryPayload && activeInquiryPayload.inquiry_id === targetId) {
+          activeInquiryPayload = null;
+        }
+        await loadProviderData();
+      } catch (e) {
+        alert('Delete error: ' + e.message);
       }
     }
 
@@ -1670,10 +1740,11 @@
             <span class="decision-badge-pill MANUAL_REVIEW">MANUAL REVIEW</span>
           </div>
           <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.75rem;">Score: ${Math.round(item.qualification_score)} | Requires Safety/Conflict Sign-off</div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none;" onclick="actionProviderRequest('APPROVED')">✓ Approve</button>
-            <button class="btn-quick-inquire" style="background: var(--warning); color: #fff; border: none;" onclick="actionProviderRequest('COUNTER_OFFER')">⇄ Propose Counter</button>
-            <button class="btn-quick-inquire" style="background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border);" onclick="actionProviderRequest('REJECTED')">✕ Decline</button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none;" onclick="actionProviderRequest('APPROVED', '${item.inquiry_id}')">✓ Approve</button>
+            <button class="btn-quick-inquire" style="background: var(--warning); color: #fff; border: none;" onclick="actionProviderRequest('COUNTER_OFFER', '${item.inquiry_id}')">⇄ Propose Counter</button>
+            <button class="btn-quick-inquire" style="background: var(--danger-soft); color: var(--danger); border-color: var(--danger-border);" onclick="actionProviderRequest('REJECTED', '${item.inquiry_id}')">✕ Decline</button>
+            <button class="btn-quick-inquire" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5;" onclick="deleteInquiryRequest('${item.inquiry_id}')">🗑 Delete</button>
           </div>
         `;
         container.appendChild(div);

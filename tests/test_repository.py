@@ -123,3 +123,53 @@ def test_quotes_do_not_alter_inventory_or_bookings(tmp_path):
 
     assert initial_bookings_count == after_bookings_count
     assert len(initial_equipment) == len(after_equipment)
+
+
+def test_delete_inquiry_evaluation(tmp_path):
+    repo = SQLiteRepository(db_path=tmp_path / "test.db")
+    req = InquiryRequest(inquiry_id="inq_to_delete", contractor_message="Delete me")
+    resp = DecisionResponse(
+        inquiry_id="inq_to_delete",
+        decision=DecisionEnum.MANUAL_REVIEW,
+        decision_reason="Needs review",
+        parsed_inquiry=ParsedInquiry(equipment_type="Excavator"),
+        qualification_score=75.0,
+        confidence_score=0.8,
+        requires_human_approval=True,
+    )
+    repo.save_inquiry_evaluation(resp, req)
+    assert repo.get_inquiry_evaluation("inq_to_delete") is not None
+
+    deleted = repo.delete_inquiry_evaluation("inq_to_delete")
+    assert deleted is True
+    assert repo.get_inquiry_evaluation("inq_to_delete") is None
+    # Subsequent delete should return False
+    assert repo.delete_inquiry_evaluation("inq_to_delete") is False
+
+
+def test_update_inquiry_review_persists_changes(tmp_path):
+    repo = SQLiteRepository(db_path=tmp_path / "test.db")
+    req = InquiryRequest(inquiry_id="inq_review_persist", contractor_message="Review me")
+    resp = DecisionResponse(
+        inquiry_id="inq_review_persist",
+        decision=DecisionEnum.MANUAL_REVIEW,
+        decision_reason="Safety flag",
+        parsed_inquiry=ParsedInquiry(equipment_type="Dozer"),
+        qualification_score=70.0,
+        confidence_score=0.75,
+        requires_human_approval=True,
+    )
+    repo.save_inquiry_evaluation(resp, req)
+
+    updated = repo.update_inquiry_review("inq_review_persist", action="APPROVED", notes="Approved by supervisor")
+    assert updated is not None
+    assert updated["manual_review_status"] == "APPROVED"
+    assert updated["manual_review_notes"] == "Approved by supervisor"
+
+    # Verify directly from database that it updated decision and requires_human_approval
+    history = repo.list_inquiry_evaluations()
+    target = next((h for h in history if h["inquiry_id"] == "inq_review_persist"), None)
+    assert target is not None
+    assert target["decision"] == "AUTO_QUOTE"
+    assert target["requires_human_approval"] == 0
+
