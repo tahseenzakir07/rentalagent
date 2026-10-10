@@ -6,6 +6,8 @@
     "start_date": "2026-10-16",
     "end_date": "2026-10-24",
     "status": "CONFIRMED",
+    "time_slot": "morning",
+    "time_slot_details": "08:00 - 14:00",
     "site_location": "Round Rock Commercial Park, TX",
     "daily_rate": 1100.0,
     "created_at": "2026-10-01T09:00:00Z"
@@ -17,6 +19,7 @@
     "start_date": "2026-11-01",
     "end_date": "2026-11-10",
     "status": "CONFIRMED",
+    "time_slot": "full_day",
     "site_location": "Bastrop Quarry, TX",
     "daily_rate": 1400.0,
     "created_at": "2026-10-05T14:30:00Z"

@@ -13,12 +13,65 @@
       "base_delivery_fee": 250.0,
       "per_mile_delivery_rate": 4.5,
       "certified_operator_daily_rate": 500.0,
+      "certified_operator_hourly_rate": 65.0,
       "high_value_quote_threshold": 12000.0,
       "weekend_surcharge_rate": 0.15
     },
     "policies": {
       "max_single_rental_days": 90,
       "operator_mandate_weight_tons": 15.0,
+      "unattended_site_inspection_required": true,
+      "hazardous_site_escalation": true,
+      "strict_budget_threshold_enforced": true
+    }
+  },
+  {
+    "provider_id": "PROV-002",
+    "company_name": "BuildPro Equipment Solutions",
+    "business_details": {
+      "address": "1200 Logistics Way, Round Rock, TX 78664",
+      "dispatch_phone": "+1-512-555-0244",
+      "operating_license": "TX-HE-2024-9104",
+      "business_hours": "07:00 - 19:00 CST"
+    },
+    "pricing_rules": {
+      "sales_tax_rate": 0.07,
+      "base_delivery_fee": 180.0,
+      "per_mile_delivery_rate": 3.8,
+      "certified_operator_daily_rate": 450.0,
+      "certified_operator_hourly_rate": 60.0,
+      "high_value_quote_threshold": 15000.0,
+      "weekend_surcharge_rate": 0.10
+    },
+    "policies": {
+      "max_single_rental_days": 120,
+      "operator_mandate_weight_tons": 18.0,
+      "unattended_site_inspection_required": false,
+      "hazardous_site_escalation": true,
+      "strict_budget_threshold_enforced": true
+    }
+  },
+  {
+    "provider_id": "PROV-003",
+    "company_name": "Titan Fleet Rentals",
+    "business_details": {
+      "address": "880 Heavy Haul Dr, San Marcos, TX 78666",
+      "dispatch_phone": "+1-512-555-0377",
+      "operating_license": "TX-HE-2024-7711",
+      "business_hours": "06:00 - 20:00 CST"
+    },
+    "pricing_rules": {
+      "sales_tax_rate": 0.08,
+      "base_delivery_fee": 300.0,
+      "per_mile_delivery_rate": 5.0,
+      "certified_operator_daily_rate": 550.0,
+      "certified_operator_hourly_rate": 70.0,
+      "high_value_quote_threshold": 10000.0,
+      "weekend_surcharge_rate": 0.12
+    },
+    "policies": {
+      "max_single_rental_days": 60,
+      "operator_mandate_weight_tons": 12.0,
       "unattended_site_inspection_required": true,
       "hazardous_site_escalation": true,
       "strict_budget_threshold_enforced": true

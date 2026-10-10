@@ -109,7 +109,7 @@ def test_scenario_5_budget_constraint(tmp_path):
 
     assert response.decision == DecisionEnum.MANUAL_REVIEW
     assert response.counter_offer is not None
-    assert response.counter_offer.counter_type == "BUDGET_TIER"
+    assert response.counter_offer.counter_type == "REQUIREMENT_RELAXATION"
 
 
 def test_scenario_6_tool_failure_fails_closed(tmp_path):
@@ -192,4 +192,93 @@ def test_tool_call_sequences_are_context_dependent(tmp_path):
     assert seq_conflict == ["check_availability"]
     assert seq_complete != seq_missing
     assert seq_complete != seq_conflict
+
+
+def test_same_equipment_cheapest_eligible_option_with_budget(tmp_path):
+    repo = SQLiteRepository(db_path=tmp_path / "test.db")
+    orchestrator = AgentOrchestrator(repository=repo)
+
+    req = InquiryRequest(
+        inquiry_id="budget_daily_1",
+        contractor_message="Need a 20-ton excavator for 2 days starting 2026-11-12 in Austin, TX. Budget is ₹5,000 per day. Self-pickup with a licensed operator.",
+        contractor_id="CON-101",
+    )
+
+    response = orchestrator.evaluate_inquiry(req)
+
+    assert response.decision == DecisionEnum.AUTO_QUOTE
+    assert response.estimated_quote is not None
+    assert response.estimated_quote.company_name == "BuildPro Equipment Solutions"
+    assert response.estimated_quote.daily_rate <= 5000
+
+
+def test_morning_slot_conflict_offers_evening_alternative(tmp_path):
+    repo = SQLiteRepository(db_path=tmp_path / "test.db")
+    orchestrator = AgentOrchestrator(repository=repo)
+
+    req = InquiryRequest(
+        inquiry_id="slot_conflict_1",
+        contractor_message="Need a 20-ton excavator for 4 days starting 2026-10-18 at 9 AM in Pflugerville, TX.",
+        contractor_id="CON-101",
+    )
+
+    response = orchestrator.evaluate_inquiry(req)
+
+    assert response.decision == DecisionEnum.MANUAL_REVIEW
+    assert response.counter_offer is not None
+    assert response.counter_offer.counter_type == "TIME_SLOT_SHIFT"
+    assert "5 PM" in response.follow_up_message or "Evening" in response.follow_up_message
+
+
+def test_pickup_without_license_adds_hourly_operator_fee(tmp_path):
+    repo = SQLiteRepository(db_path=tmp_path / "test.db")
+    orchestrator = AgentOrchestrator(repository=repo)
+
+    req = InquiryRequest(
+        inquiry_id="pickup_no_license_1",
+        contractor_message="Need a 20-ton excavator for 2 days starting 2026-11-12 in San Marcos, TX. Self-pickup. No licensed operator on our crew.",
+        contractor_id="CON-101",
+    )
+
+    response = orchestrator.evaluate_inquiry(req)
+
+    assert response.decision == DecisionEnum.AUTO_QUOTE
+    assert response.estimated_quote is not None
+    assert response.estimated_quote.transport_fee == 0.0
+    assert response.estimated_quote.operator_fee > 0
+
+
+def test_no_budget_prompts_for_budget_instead_of_manual_review(tmp_path):
+    repo = SQLiteRepository(db_path=tmp_path / "test.db")
+    orchestrator = AgentOrchestrator(repository=repo)
+
+    req = InquiryRequest(
+        inquiry_id="budget_missing_1",
+        contractor_message="Need a 20-ton excavator for 2 days starting 2026-11-12 in Austin, TX. Self-pickup with a licensed operator.",
+        contractor_id="CON-103",
+    )
+
+    response = orchestrator.evaluate_inquiry(req)
+
+    assert response.decision == DecisionEnum.REQUEST_INFO
+    assert "budget" in response.follow_up_message.lower()
+    assert "manual review" not in response.follow_up_message.lower()
+
+
+def test_budget_exceedance_prompts_requirement_relaxation_when_no_company_fits(tmp_path):
+    repo = SQLiteRepository(db_path=tmp_path / "test.db")
+    orchestrator = AgentOrchestrator(repository=repo)
+
+    req = InquiryRequest(
+        inquiry_id="budget_relax_1",
+        contractor_message="Need a 20-ton excavator for 2 days starting 2026-11-12 in Austin, TX. Budget is $250.",
+        contractor_id="CON-102",
+    )
+
+    response = orchestrator.evaluate_inquiry(req)
+
+    assert response.decision == DecisionEnum.MANUAL_REVIEW
+    assert response.counter_offer is not None
+    assert response.counter_offer.counter_type == "REQUIREMENT_RELAXATION"
+    assert "budget" in response.follow_up_message.lower()
 

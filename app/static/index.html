@@ -1472,6 +1472,8 @@
     // ----------------------------------------------------
     // CONTRACTOR CHAT LOGIC (RIGHT SIDE)
     // ----------------------------------------------------
+    let activeChatHistory = [];
+
     function sendPrompt(promptText) {
       const input = document.getElementById('chatInput');
       input.value = promptText;
@@ -1486,6 +1488,7 @@
 
       input.value = '';
       appendChatMessage('user', text);
+      activeChatHistory.push({ role: 'user', content: text });
 
       // Show Agent thinking bubble
       const stream = document.getElementById('chatStream');
@@ -1506,6 +1509,7 @@
           contractor_message: text,
           contractor_id: 'CON-101',
           provider_id: 'PROV-001',
+          conversation_history: activeChatHistory,
         };
 
         const res = await fetch('/api/v1/agent/evaluate', {
@@ -1517,6 +1521,10 @@
         const data = await res.json();
         const thinkElem = document.getElementById('thinkingBubble');
         if (thinkElem) thinkElem.remove();
+
+        if (data.follow_up_message) {
+          activeChatHistory.push({ role: 'assistant', content: data.follow_up_message });
+        }
 
         renderAgentChatResponse(data);
       } catch (err) {
@@ -1545,21 +1553,52 @@
 
       let cardsHtml = '';
 
-      // Quote breakdown
+      // Quote breakdown & Multi-company comparison
       if (data.estimated_quote) {
         const q = data.estimated_quote;
+        let compHtml = '';
+        if (q.provider_comparison && q.provider_comparison.length > 0) {
+          compHtml = `
+            <div style="margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed #cbd5e1;">
+              <div style="font-size: 0.75rem; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-bottom: 0.35rem;">
+                📊 Multi-Company Market Rate Comparison:
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                ${q.provider_comparison.map(opt => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.6rem; border-radius: 6px; background: ${opt.is_cheapest ? '#dcfce7' : '#f8fafc'}; border: 1px solid ${opt.is_cheapest ? '#86efac' : '#e2e8f0'}; font-size: 0.78rem;">
+                    <div>
+                      <strong>${opt.company_name}</strong>
+                      <div style="font-size: 0.72rem; color: #64748b;">${opt.model_name} @ $${opt.daily_rate}/day ${opt.delivery_fee === 0 ? '(Self-Pickup)' : ''}</div>
+                    </div>
+                    <div style="text-align: right;">
+                      <span style="font-weight: 800; color: ${opt.is_cheapest ? '#15803d' : '#334155'};">$${opt.total_estimated_amount.toLocaleString()}</span>
+                      ${opt.is_cheapest ? '<span style="font-size: 0.68rem; background: #22c55e; color: #fff; padding: 0.1rem 0.35rem; border-radius: 4px; margin-left: 0.3rem; font-weight: 700;">Cheapest Option</span>' : ''}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
         cardsHtml += `
           <div class="chat-decision-card" style="border-left: 4px solid var(--success); background: #f0fdf4;">
-            <div style="font-weight: 800; color: #166534; margin-bottom: 0.25rem;">💰 Verified Quote: ${q.equipment_name}</div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="font-weight: 800; color: #166534; margin-bottom: 0.25rem;">💰 Verified Quote: ${q.equipment_name}</div>
+              <span style="font-size: 0.7rem; font-weight: 700; background: #dcfce7; color: #15803d; padding: 0.15rem 0.4rem; border-radius: 4px;">${q.company_name || 'Apex Heavy Equipment'}</span>
+            </div>
             <div style="font-size: 0.8rem; color: #374151; margin-bottom: 0.5rem;">
-              ${q.duration_days} days @ $${q.daily_rate}/day | Delivery: $${q.transport_fee} | Taxes & Fees: $${q.taxes_and_fees}
+              ${q.duration_days} days @ $${q.daily_rate}/day | ${q.transport_fee === 0 ? 'Self-Pickup (Delivery Charge Waived)' : `Delivery: $${q.transport_fee}`} | Taxes & Fees: $${q.taxes_and_fees}
             </div>
             <div style="font-size: 1.25rem; font-weight: 800; color: var(--success); margin-bottom: 0.6rem;">
               $${q.total_estimated_amount.toLocaleString()} USD
             </div>
-            <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none; font-weight: 700; padding: 0.45rem 0.95rem;" onclick="alert('Quote accepted! Dispatch hold placed under inquiry ID ${data.inquiry_id}.')">
-              ✓ Accept & Request Dispatch Hold
-            </button>
+            ${compHtml}
+            <div style="margin-top: 0.6rem;">
+              <button class="btn-quick-inquire" style="background: var(--success); color: #fff; border: none; font-weight: 700; padding: 0.45rem 0.95rem;" onclick="alert('Quote accepted! Dispatch hold placed under inquiry ID ${data.inquiry_id}.')">
+                ✓ Accept & Request Dispatch Hold
+              </button>
+            </div>
           </div>
         `;
       }
@@ -1567,6 +1606,31 @@
       // Counter-Offer
       if (data.counter_offer) {
         const co = data.counter_offer;
+        let actionButtons = '';
+        if (co.counter_type === 'TIME_SLOT_SHIFT') {
+          actionButtons = `
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              <button class="btn-quick-inquire" style="background: #b45309; color: #fff; border: none; font-weight: 700; padding: 0.35rem 0.75rem;" onclick="quickSendPrompt('Accept Evening 5 PM delivery slot for ${data.parsed_inquiry.equipment_type || 'excavator'}')">
+                ✓ Accept Evening Slot (5 PM)
+              </button>
+              <button class="btn-quick-inquire" style="background: #475569; color: #fff; border: none; font-weight: 700; padding: 0.35rem 0.75rem;" onclick="quickSendPrompt('Search other companies for Morning 9 AM slot')">
+                🔍 Search Other Companies for Morning
+              </button>
+            </div>
+          `;
+        } else if (co.counter_type === 'REQUIREMENT_RELAXATION') {
+          actionButtons = `
+            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem;">
+              <button class="btn-quick-inquire" style="background: #b45309; color: #fff; border: none; font-weight: 700; padding: 0.35rem 0.65rem;" onclick="quickSendPrompt('Down-tier to 5-ton Mini Excavator within $400 budget')">
+                📉 Down-tier to 5-ton Mini Excavator
+              </button>
+              <button class="btn-quick-inquire" style="background: #1e293b; color: #fff; border: none; font-weight: 700; padding: 0.35rem 0.65rem;" onclick="quickSendPrompt('Request manual review custom price negotiation with provider manager')">
+                🤝 Request Manual Review Price Negotiation
+              </button>
+            </div>
+          `;
+        }
+
         cardsHtml += `
           <div class="chat-decision-card" style="border-left: 4px solid var(--warning); background: var(--warning-soft);">
             <div style="font-size: 0.72rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Verified Alternative Proposed</div>
@@ -1575,6 +1639,7 @@
             <div style="font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; color: var(--text-main);">
               Proposed Option: <strong style="color: #b45309;">${co.proposed_term}</strong>
             </div>
+            ${actionButtons}
           </div>
         `;
       }

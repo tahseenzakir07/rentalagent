@@ -15,6 +15,7 @@ from app.schemas.decision import (
     DecisionEnum,
     EstimatedQuote,
     EstimatedQuoteLineItem,
+    ProviderComparisonOption,
     QualificationCheck,
 )
 from app.schemas.inquiry import ParsedInquiry
@@ -294,9 +295,15 @@ class DecisionEngine:
                     line_items = [
                         EstimatedQuoteLineItem(**item) for item in pdata.get("line_items", [])
                     ]
+                    provider_comparison = [
+                        ProviderComparisonOption(**option)
+                        for option in pdata.get("provider_comparison", [])
+                    ]
                     estimated_quote = EstimatedQuote(
                         equipment_id=pdata["equipment_id"],
                         equipment_name=pdata["equipment_name"],
+                        provider_id=pdata.get("provider_id", "PROV-001"),
+                        company_name=pdata.get("company_name", "Apex Heavy Equipment Rentals"),
                         duration_days=pdata["duration_days"],
                         daily_rate=pdata["daily_rate"],
                         base_amount=pdata["base_amount"],
@@ -305,6 +312,8 @@ class DecisionEngine:
                         taxes_and_fees=pdata.get("taxes_and_fees", 0.0),
                         total_estimated_amount=pdata["total_estimated_amount"],
                         line_items=line_items,
+                        provider_comparison=provider_comparison,
+                        currency=pdata.get("currency", "USD"),
                     )
             else:
                 checks.append(
@@ -368,6 +377,20 @@ class DecisionEngine:
         # 3. Deterministic Decision Policy Rules
         # ---------------------------------------------------------
 
+        # Rule 0: Equipment Not Found in Catalog -> REQUEST_INFO with catalog notification
+        if availability_result and availability_result.error == "EQUIPMENT_NOT_FOUND":
+            decision = DecisionEnum.REQUEST_INFO
+            item_name = parsed_inquiry.equipment_type or "requested equipment"
+            reason = f"Requested equipment '{item_name}' is not available in fleet catalog inventory."
+            requires_human_approval = False
+            follow_up = (
+                f"Thank you for contacting Apex Equipment Rentals. Unfortunately, '{item_name}' is not an equipment item "
+                "we carry in our rental fleet. Our available equipment categories include Excavators, Mini Excavators, "
+                "Boom Lifts, Bulldozers, Wheel Loaders, and Skid Steers. Please let us know if one of these machines "
+                "would work for your project!"
+            )
+            return decision, reason, qualification_score, checks, missing_info, None, follow_up, requires_human_approval
+
         # Rule 1: Tool execution failure or hard system exception -> MANUAL_REVIEW
         if availability_result and availability_result.error:
             decision = DecisionEnum.MANUAL_REVIEW
@@ -398,7 +421,14 @@ class DecisionEngine:
         if avail_check and avail_check.status == CheckStatus.FAIL:
             decision = DecisionEnum.MANUAL_REVIEW
             requires_human_approval = True
-            if counter_offer:
+            if counter_offer and counter_offer.counter_type == "TIME_SLOT_SHIFT":
+                reason = f"Morning time slot (9 AM) is booked. Proposed same-day Evening slot (5 PM) adjustment."
+                follow_up = (
+                    f"Thank you for your inquiry. The requested {parsed_inquiry.equipment_capacity or ''} {parsed_inquiry.equipment_type} is currently "
+                    f"booked during your requested Morning slot (9 AM). However, it IS available for Evening delivery/pickup (5 PM). "
+                    f"Would an Evening slot work for your schedule? If not, we can search other providers for morning availability."
+                )
+            elif counter_offer:
                 reason = f"Requested machine is booked for these dates. Verified counter-offer proposed: {counter_offer.proposed_term}."
                 follow_up = (
                     f"Thank you for your inquiry. The requested {parsed_inquiry.equipment_capacity or ''} {parsed_inquiry.equipment_type} is "
@@ -413,8 +443,22 @@ class DecisionEngine:
                 )
             return decision, reason, qualification_score, checks, missing_info, None, follow_up, requires_human_approval
 
-        # Rule 4: Budget exceeded -> MANUAL_REVIEW (with Budget Counter-Offer if available)
+        # Rule 4A: Budget is optional; if it was not specified, ask the user for it instead of escalating.
         price_check = next((c for c in checks if c.name == "PRICING_AND_BUDGET"), None)
+        if parsed_inquiry.budget is None and (
+            price_check is None or price_check.status in {CheckStatus.PASS, CheckStatus.NOT_APPLICABLE, CheckStatus.PENDING}
+        ):
+            decision = DecisionEnum.REQUEST_INFO
+            reason = "Budget not specified. Available equipment options can be shown, but a maximum budget is required to filter and compare them properly."
+            requires_human_approval = False
+            follow_up = (
+                "Thank you for the inquiry. We have verified the equipment options that are available. "
+                "To compare the best matches against your spending limit and keep the process efficient, "
+                "could you please share your maximum total budget or your daily budget cap?"
+            )
+            return decision, reason, qualification_score, checks, missing_info, None, follow_up, requires_human_approval
+
+        # Rule 4B: Budget exceeded -> MANUAL_REVIEW (with Budget Counter-Offer or Requirement Relaxation if available)
         if price_check and price_check.status == CheckStatus.FAIL:
             decision = DecisionEnum.MANUAL_REVIEW
             requires_human_approval = True
@@ -422,8 +466,16 @@ class DecisionEngine:
                 reason = f"Requested configuration exceeds contractor budget. Verified budget-aligned alternative proposed."
                 follow_up = (
                     f"Thank you for your inquiry. Our standard rate for the requested {parsed_inquiry.equipment_type} exceeds your "
-                    f"stated budget of ${parsed_inquiry.budget:,.2f}. We have prepared an alternative option ({counter_offer.title}: "
+                    f"stated budget cap of ${parsed_inquiry.budget:,.2f}. We have prepared a budget-aligned alternative option ({counter_offer.title}: "
                     f"{counter_offer.proposed_term}). An account representative is reviewing your file to finalize terms."
+                )
+            elif counter_offer and counter_offer.counter_type == "REQUIREMENT_RELAXATION":
+                reason = f"All provider companies exceed contractor budget cap. Requirement relaxation prompt generated."
+                follow_up = (
+                    f"Thank you for reaching out! All 20-ton equipment options across our rental provider network exceed your "
+                    f"stated budget cap of ${parsed_inquiry.budget:,.2f}. Before escalating to our commercial team for a custom manual review negotiation, "
+                    f"would you consider: 1. Down-tiering to a smaller machine capacity? 2. Extending rental period for a bulk discount? "
+                    f"Or 3. Requesting a custom price negotiation manual review?"
                 )
             else:
                 reason = f"Pricing or budget constraint: {price_check.explanation}"
@@ -468,16 +520,31 @@ class DecisionEngine:
         if all_passed:
             decision = DecisionEnum.AUTO_QUOTE
             reason = (
-                f"All qualification criteria passed. Verified available {estimated_quote.equipment_name} for "
+                f"All qualification criteria passed. Verified available {estimated_quote.equipment_name} ({estimated_quote.company_name}) for "
                 f"{estimated_quote.duration_days} days. Total estimated quote: ${estimated_quote.total_estimated_amount:,.2f}."
             )
             requires_human_approval = False
+
+            delivery_note = ""
+            if parsed_inquiry.delivery_mode == "pickup":
+                if parsed_inquiry.has_licensed_operator is False:
+                    delivery_note = " Mode: Self-Pickup (Delivery charge waived: $0). Certified operator added at $65/hr since no licensed operator is on site."
+                else:
+                    delivery_note = " Mode: Self-Pickup (Delivery charge waived: $0). Customer confirmed licensed operator for pickup."
+            else:
+                delivery_note = f" Delivery Fee: ${estimated_quote.transport_fee:,.2f}."
+
+            comp_note = ""
+            if estimated_quote.provider_comparison and len(estimated_quote.provider_comparison) > 1:
+                cheapest_opt = estimated_quote.provider_comparison[0]
+                comp_note = f" Evaluated {len(estimated_quote.provider_comparison)} rental companies; selected cheapest eligible option: {cheapest_opt['company_name']} (${cheapest_opt['total_estimated_amount']:,.2f})."
+
             follow_up = (
-                f"Hello Marcus! We have verified that the {estimated_quote.equipment_name} is available for your project "
+                f"Hello Marcus! We have verified that the {estimated_quote.equipment_name} from {estimated_quote.company_name} is available for your project "
                 f"starting {parsed_inquiry.start_date} for {estimated_quote.duration_days} days. "
                 f"Your estimated quote total is ${estimated_quote.total_estimated_amount:,.2f} "
-                f"(Base: ${estimated_quote.base_amount:,.2f}, Delivery: ${estimated_quote.transport_fee:,.2f}, "
-                f"Taxes/Fees: ${estimated_quote.taxes_and_fees:,.2f}). "
+                f"(Base: ${estimated_quote.base_amount:,.2f},{delivery_note} "
+                f"Taxes/Fees: ${estimated_quote.taxes_and_fees:,.2f}).{comp_note} "
                 f"Disclaimer: {estimated_quote.disclaimer}"
             )
             return decision, reason, qualification_score, checks, missing_info, estimated_quote, follow_up, requires_human_approval

@@ -19,7 +19,7 @@ class Settings(BaseSettings):
             or os.getenv("OPENAI_API_KEY")
             or os.getenv("GEMINI_API_KEY")
             or os.getenv("GOOGLE_API_KEY")
-        ) else "LLM",
+        ) else "SIMULATED",
         validation_alias="RENTALIQ_EXECUTION_MODE",
     )
     llm_provider: str = Field(

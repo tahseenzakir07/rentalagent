@@ -34,6 +34,10 @@ class InquiryRequest(BaseModel):
         default_factory=dict,
         description="Arbitrary client metadata (e.g. channel, urgent flag, source).",
     )
+    conversation_history: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Previous message turns in chat session for multi-turn context maintenance.",
+    )
 
 
 class ParsedInquiry(BaseModel):
@@ -73,9 +77,25 @@ class ParsedInquiry(BaseModel):
         ge=0.0,
         description="Contractor's stated budget or price cap, if provided.",
     )
+    budget_is_daily: bool = Field(
+        default=False,
+        description="True if the stated budget is a daily cap (e.g. '₹5,000 per day'), not a total rental cap.",
+    )
     operator_required: Optional[bool] = Field(
         default=None,
         description="True if operator requested, False if dry hire requested, None if unspecified.",
+    )
+    preferred_time_slot: Optional[str] = Field(
+        default=None,
+        description="Requested delivery/pickup time slot (e.g., 'morning', 'evening', '9 AM', '5 PM').",
+    )
+    delivery_mode: Optional[str] = Field(
+        default=None,
+        description="Delivery mode: 'delivery' (provider dispatches to site) or 'pickup' (contractor picks up).",
+    )
+    has_licensed_operator: Optional[bool] = Field(
+        default=None,
+        description="True if contractor has certified operating license holder for self-pickup, False if not.",
     )
     site_access_details: Optional[str] = Field(
         default=None,

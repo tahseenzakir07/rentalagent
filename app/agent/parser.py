@@ -17,6 +17,78 @@ from app.schemas.inquiry import ParsedInquiry
 logger = logging.getLogger(__name__)
 
 
+MONTH_MAP = {
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
+    "may": 5,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "september": 9, "sept": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12,
+}
+
+
+def parse_natural_date(text: str) -> Optional[date]:
+    """Parse dates from ISO format (YYYY-MM-DD) or natural language strings."""
+    text_lower = text.lower()
+
+    # 1. ISO YYYY-MM-DD
+    iso = re.search(r"\b(202[4-9])-(\d{1,2})-(\d{1,2})\b", text)
+    if iso:
+        try:
+            return date(int(iso.group(1)), int(iso.group(2)), int(iso.group(3)))
+        except ValueError:
+            pass
+
+    current_year = date.today().year
+
+    # 2. Day Month (Year): e.g. "21st oct 2026", "21st of october", "21 oct"
+    dm = re.search(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?([a-zA-Z]{3,9})(?:\s+(202[4-9]))?\b", text_lower)
+    if dm:
+        day_val = int(dm.group(1))
+        m_str = dm.group(2)
+        year_val = int(dm.group(3)) if dm.group(3) else current_year
+        if m_str in MONTH_MAP:
+            try:
+                return date(year_val, MONTH_MAP[m_str], day_val)
+            except ValueError:
+                pass
+
+    # 3. Month Day (Year): e.g. "october 21st 2026", "oct 21", "october the 21st"
+    md = re.search(r"\b([a-zA-Z]{3,9})\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+)?(202[4-9])?\b", text_lower)
+    if md:
+        m_str = md.group(1)
+        day_val = int(md.group(2))
+        year_val = int(md.group(3)) if md.group(3) else current_year
+        if m_str in MONTH_MAP:
+            try:
+                return date(year_val, MONTH_MAP[m_str], day_val)
+            except ValueError:
+                pass
+
+    # 4. Numeric DD/MM/YYYY or MM/DD/YYYY
+    num = re.search(r"\b(\d{1,2})[./-](\d{1,2})[./-](202[4-9])\b", text)
+    if num:
+        n1, n2, yr = int(num.group(1)), int(num.group(2)), int(num.group(3))
+        if n1 > 12:
+            try:
+                return date(yr, n2, n1)
+            except ValueError:
+                pass
+        else:
+            try:
+                return date(yr, n1, n2)
+            except ValueError:
+                pass
+
+    return None
+
+
 class InquiryParser(ABC):
     """Abstract interface for extracting inquiry fields."""
 
@@ -72,8 +144,30 @@ class MockInquiryParser(InquiryParser):
         elif "skid steer" in lower_text or "track loader" in lower_text or "bobcat" in lower_text:
             equipment_type = "Skid Steer"
             equipment_capacity = "4.8-ton"
+        else:
+            # Fallback for unrecognized/arbitrary equipment names (e.g. "knife", "generator", "chainsaw")
+            eq_match = re.search(
+                r"\b(?:do\s+you\s+have\s+a|do\s+you\s+have\s+an|do\s+you\s+have|have\s+a|have\s+an|rental\s+of|rent\s+a|rent\s+an|rent|hire\s+a|hire\s+an|hire|need\s+a|need\s+an|need|want\s+a|want\s+an|for\s+a|for\s+an)\s+([a-zA-Z0-9_\-]+)\b",
+                lower_text,
+            )
+            stopwords = {"A", "An", "The", "For", "Some", "To", "In", "At", "On", "With", "Our", "My", "This", "Equipment", "Me", "You", "It", "Any"}
+            if eq_match:
+                candidate = eq_match.group(1).strip().title()
+                if candidate not in stopwords:
+                    equipment_type = candidate
+            elif lower_text.strip().isalpha() and lower_text.strip().title() not in stopwords:
+                equipment_type = lower_text.strip().title()
 
-        # 2. Date parsing (ISO YYYY-MM-DD or standard patterns)
+        # Look for capacity if not explicitly matched above
+        if not equipment_capacity:
+            cap_match = re.search(r"\b(\d+(?:\.\d+)?\s*(?:ton|t|ft|kg|lbs))\b", lower_text)
+            if cap_match:
+                raw_cap = cap_match.group(1).strip()
+                if "ton" in raw_cap and "-" not in raw_cap:
+                    raw_cap = raw_cap.replace("ton", "-ton").replace("  ", " ")
+                equipment_capacity = raw_cap
+
+        # 2. Date parsing (ISO YYYY-MM-DD or natural language date patterns)
         start_date: Optional[date] = None
         end_date: Optional[date] = None
 
@@ -90,6 +184,9 @@ class MockInquiryParser(InquiryParser):
                 start_date = datetime.strptime(iso_dates[0], "%Y-%m-%d").date()
             except ValueError:
                 pass
+
+        if not start_date:
+            start_date = parse_natural_date(text)
 
         # 3. Duration parsing (e.g., "for 4 days", "4 days", "1 week", "for 2 weeks")
         duration_days: Optional[int] = None
@@ -112,40 +209,89 @@ class MockInquiryParser(InquiryParser):
         location: Optional[str] = context.get("project_location")
         if not location:
             loc_match = re.search(
-                r"\b(?:at|in|to)\s+([0-9A-Za-z\s,.-]+?(?:TX|Texas|Austin|Buda|Pflugerville|San Marcos|Kyle|Bastrop))\b",
+                r"\b(?:at|in|to)\s+(?:city\s+)?([0-9A-Za-z\s,.-]+?(?:TX|Texas|Austin|Buda|Pflugerville|San Marcos|Kyle|Bastrop))\b",
                 text,
                 re.IGNORECASE,
             )
             if loc_match:
                 location = loc_match.group(1).strip()
+            elif "in city " in lower_text:
+                part = text.split("in city ")[-1].split(".")[0].split(",")[0].split()[0].strip()
+                if len(part) >= 2:
+                    location = part.title()
             elif "in " in lower_text:
                 # Fallback location detection
-                part = text.split("in ")[-1].split(".")[0].split(",")[0].strip()
-                if len(part) > 2 and len(part) < 30:
-                    location = part
+                parts = text.split("in ")
+                for part_str in parts[1:]:
+                    part = part_str.split(".")[0].split(",")[0].split()[0].strip()
+                    lower_part = part.lower()
+                    non_loc = {"october", "oct", "november", "nov", "december", "dec", "january", "jan", "february", "feb", "march", "mar", "april", "apr", "may", "june", "jun", "july", "jul", "august", "aug", "september", "sep", "the", "a", "an"}
+                    if lower_part not in non_loc and len(part) > 2 and len(part) < 30:
+                        location = part.title()
+                        break
 
-        # 5. Budget extraction (e.g. "$8,000", "$1,800", "budget is 8000")
+        # 5. Budget extraction (e.g. "$8,000", "₹5,000", "5000 per day", "budget is 8000")
         budget: Optional[float] = None
-        budget_match = re.search(r"\$\s*([0-9,]+(?:\.\d{2})?)", text)
-        if budget_match:
+        budget_is_daily = bool(re.search(r"budget\s+(?:is|of|capped at)?\s*(?:strictly\s+capped\s+at)?\s*(?:\$|₹|rs\.?|inr)?\s*[0-9,]+\s*(?:per\s+day|daily|\/\s*day)", lower_text))
+        curr_match = re.search(r"(?:\$|₹|rs\.?|inr)\s*([0-9,]+(?:\.\d{2})?)", lower_text)
+        if curr_match:
             try:
-                budget = float(budget_match.group(1).replace(",", ""))
+                budget = float(curr_match.group(1).replace(",", ""))
             except ValueError:
                 pass
         else:
-            budget_kw = re.search(r"budget\s+(?:is|of|capped at)?\s*(?:strictly\s+capped\s+at)?\s*\$?([0-9,]+)", lower_text)
+            budget_kw = re.search(r"budget\s+(?:is|of|capped at)?\s*(?:strictly\s+capped\s+at)?\s*(?:\$|₹|rs\.?|inr)?\s*([0-9,]+)", lower_text)
             if budget_kw:
                 try:
                     budget = float(budget_kw.group(1).replace(",", ""))
                 except ValueError:
                     pass
 
-        # 6. Operator requirements
+        # 6. Operator requirements & Licensing status
         operator_required: Optional[bool] = None
         if "dry hire" in lower_text or "self-operated" in lower_text or "our crew" in lower_text or "our own operator" in lower_text or "without operator" in lower_text:
             operator_required = False
         elif "with operator" in lower_text or "need operator" in lower_text or "operator required" in lower_text or "provide operator" in lower_text:
             operator_required = True
+
+        has_licensed_operator: Optional[bool] = None
+        negative_license_patterns = [
+            "no license",
+            "no licensed operator",
+            "no licensed person",
+            "no license holder",
+            "don't have license",
+            "do not have license",
+            "without license",
+            "unlicensed",
+            "without licensed operator",
+        ]
+        positive_license_patterns = [
+            "have license",
+            "has license",
+            "licensed operator",
+            "license holder",
+            "with license",
+            "licensed person",
+        ]
+        if any(p in lower_text for p in negative_license_patterns):
+            has_licensed_operator = False
+        elif any(p in lower_text for p in positive_license_patterns):
+            has_licensed_operator = True
+
+        # 6b. Preferred Time Slot (Morning vs Evening)
+        preferred_time_slot: Optional[str] = None
+        if "9 am" in lower_text or "9am" in lower_text or "morning" in lower_text or "9:00" in lower_text:
+            preferred_time_slot = "morning"
+        elif "5 pm" in lower_text or "5pm" in lower_text or "evening" in lower_text or "17:00" in lower_text:
+            preferred_time_slot = "evening"
+
+        # 6c. Delivery Mode (Pickup vs Delivery)
+        delivery_mode: Optional[str] = None
+        if "self-pickup" in lower_text or "self pickup" in lower_text or "pickup" in lower_text or "pick up" in lower_text or "no delivery" in lower_text:
+            delivery_mode = "pickup"
+        elif "delivery" in lower_text or "deliver to" in lower_text or "dispatch" in lower_text:
+            delivery_mode = "delivery"
 
         # 7. Site access details & restrictions
         site_access_details: Optional[str] = None
@@ -213,7 +359,11 @@ class MockInquiryParser(InquiryParser):
             duration_days=duration_days,
             location=location,
             budget=budget,
+            budget_is_daily=budget_is_daily,
             operator_required=operator_required,
+            preferred_time_slot=preferred_time_slot,
+            delivery_mode=delivery_mode,
+            has_licensed_operator=has_licensed_operator,
             site_access_details=site_access_details,
             special_requirements=special_requirements,
             missing_fields=missing_fields,

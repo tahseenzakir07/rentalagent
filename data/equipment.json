@@ -2,11 +2,12 @@
   {
     "equipment_id": "EQ-CAT-320",
     "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
     "model_name": "Caterpillar 320 GC",
     "equipment_type": "Excavator",
     "capacity": "20-ton",
     "daily_rate": 1100.0,
-    "min_rental_days": 2,
+    "min_rental_days": 1,
     "weight_tons": 22.0,
     "max_reach_m": 9.8,
     "min_access_width_m": 3.5,
@@ -21,8 +22,51 @@
     "status": "AVAILABLE"
   },
   {
+    "equipment_id": "EQ-KOM-PC200",
+    "provider_id": "PROV-002",
+    "company_name": "BuildPro Equipment Solutions",
+    "model_name": "Komatsu PC200-10",
+    "equipment_type": "Excavator",
+    "capacity": "20-ton",
+    "daily_rate": 950.0,
+    "min_rental_days": 1,
+    "weight_tons": 21.5,
+    "max_reach_m": 9.7,
+    "min_access_width_m": 3.4,
+    "inspection_status": "PASSED",
+    "risk_tier": "STANDARD",
+    "eligible_attachments": ["hydraulic_breaker", "digging_bucket"],
+    "specifications": {
+      "horsepower": 148,
+      "fuel_capacity_gal": 88
+    },
+    "status": "AVAILABLE"
+  },
+  {
+    "equipment_id": "EQ-VOL-EC220",
+    "provider_id": "PROV-003",
+    "company_name": "Titan Fleet Rentals",
+    "model_name": "Volvo EC220E",
+    "equipment_type": "Excavator",
+    "capacity": "20-ton",
+    "daily_rate": 1250.0,
+    "min_rental_days": 1,
+    "weight_tons": 22.8,
+    "max_reach_m": 9.9,
+    "min_access_width_m": 3.6,
+    "inspection_status": "PASSED",
+    "risk_tier": "STANDARD",
+    "eligible_attachments": ["digging_bucket", "hydraulic_breaker"],
+    "specifications": {
+      "horsepower": 174,
+      "fuel_capacity_gal": 95
+    },
+    "status": "AVAILABLE"
+  },
+  {
     "equipment_id": "EQ-CAT-305",
     "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
     "model_name": "Caterpillar 305 CR",
     "equipment_type": "Mini Excavator",
     "capacity": "5-ton",
@@ -42,8 +86,30 @@
     "status": "AVAILABLE"
   },
   {
+    "equipment_id": "EQ-KUB-KX057",
+    "provider_id": "PROV-002",
+    "company_name": "BuildPro Equipment Solutions",
+    "model_name": "Kubota KX057-5",
+    "equipment_type": "Mini Excavator",
+    "capacity": "5-ton",
+    "daily_rate": 400.0,
+    "min_rental_days": 1,
+    "weight_tons": 5.5,
+    "max_reach_m": 5.7,
+    "min_access_width_m": 2.0,
+    "inspection_status": "PASSED",
+    "risk_tier": "LOW",
+    "eligible_attachments": ["auger", "hydraulic_breaker"],
+    "specifications": {
+      "horsepower": 47.6,
+      "fuel_capacity_gal": 19
+    },
+    "status": "AVAILABLE"
+  },
+  {
     "equipment_id": "EQ-JLG-600",
     "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
     "model_name": "JLG 600AJ",
     "equipment_type": "Boom Lift",
     "capacity": "60-ft",
@@ -65,11 +131,12 @@
   {
     "equipment_id": "EQ-KOM-D65",
     "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
     "model_name": "Komatsu D65EX-18",
     "equipment_type": "Bulldozer",
     "capacity": "20-ton",
     "daily_rate": 1400.0,
-    "min_rental_days": 3,
+    "min_rental_days": 1,
     "weight_tons": 21.0,
     "max_reach_m": 0.0,
     "min_access_width_m": 3.8,
@@ -83,13 +150,34 @@
     "status": "AVAILABLE"
   },
   {
+    "equipment_id": "EQ-CAT-D6T",
+    "provider_id": "PROV-002",
+    "company_name": "BuildPro Equipment Solutions",
+    "model_name": "Caterpillar D6T",
+    "equipment_type": "Bulldozer",
+    "capacity": "20-ton",
+    "daily_rate": 1300.0,
+    "min_rental_days": 1,
+    "weight_tons": 23.0,
+    "max_reach_m": 0.0,
+    "min_access_width_m": 3.7,
+    "inspection_status": "PASSED",
+    "risk_tier": "HIGH",
+    "eligible_attachments": ["ripper"],
+    "specifications": {
+      "horsepower": 215
+    },
+    "status": "AVAILABLE"
+  },
+  {
     "equipment_id": "EQ-CAT-950",
     "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
     "model_name": "Caterpillar 950M",
     "equipment_type": "Wheel Loader",
     "capacity": "18-ton",
     "daily_rate": 1000.0,
-    "min_rental_days": 2,
+    "min_rental_days": 1,
     "weight_tons": 18.5,
     "max_reach_m": 4.1,
     "min_access_width_m": 3.2,
@@ -105,6 +193,7 @@
   {
     "equipment_id": "EQ-BOB-T770",
     "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
     "model_name": "Bobcat T770 Compact Track Loader",
     "equipment_type": "Skid Steer",
     "capacity": "4.8-ton",
@@ -125,11 +214,12 @@
   {
     "equipment_id": "EQ-CAT-320-FL",
     "provider_id": "PROV-001",
+    "company_name": "Apex Heavy Equipment Rentals",
     "model_name": "Caterpillar 320D (Backup Unit)",
     "equipment_type": "Excavator",
     "capacity": "20-ton",
     "daily_rate": 1150.0,
-    "min_rental_days": 2,
+    "min_rental_days": 1,
     "weight_tons": 22.5,
     "max_reach_m": 9.8,
     "min_access_width_m": 3.5,

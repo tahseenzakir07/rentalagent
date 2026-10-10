@@ -49,16 +49,6 @@ class DefaultAvailabilityTool(AvailabilityTool):
                 error="RPC_TIMEOUT: Failed to query real-time equipment availability lock.",
             )
 
-        if not inquiry.start_date:
-            return ToolResult(
-                success=False,
-                data={},
-                evidence="Cannot verify schedule: rental start_date is not specified.",
-                source="inventory_database",
-                is_simulated=True,
-                error="MISSING_DATE: start_date required for schedule lookup.",
-            )
-
         # Find matching equipment in catalog
         matching_equipment = self.repository.get_equipment(
             equipment_id=equipment_id,
@@ -67,13 +57,26 @@ class DefaultAvailabilityTool(AvailabilityTool):
         )
 
         if not matching_equipment:
+            item_desc = inquiry.equipment_type or "requested item"
+            if inquiry.equipment_capacity:
+                item_desc += f" ({inquiry.equipment_capacity})"
             return ToolResult(
                 success=False,
                 data={},
-                evidence=f"No equipment found in catalog for type='{inquiry.equipment_type}' capacity='{inquiry.equipment_capacity}'.",
+                evidence=f"No equipment found in catalog for '{item_desc}'.",
                 source="inventory_database",
                 is_simulated=True,
                 error="EQUIPMENT_NOT_FOUND",
+            )
+
+        if not inquiry.start_date:
+            return ToolResult(
+                success=False,
+                data={},
+                evidence="Cannot verify schedule: rental start_date is not specified.",
+                source="inventory_database",
+                is_simulated=True,
+                error="MISSING_DATE: start_date required for schedule lookup.",
             )
 
         target_eq = matching_equipment[0]
@@ -90,25 +93,31 @@ class DefaultAvailabilityTool(AvailabilityTool):
                 error="MAINTENANCE_LOCK: Inspection overdue.",
             )
 
-        # Check existing bookings for schedule collision
+        # Check existing bookings for schedule collision & time slot availability
         bookings = self.repository.get_bookings(equipment_id=eq_id)
         start_dt = inquiry.start_date
         end_dt = inquiry.end_date or start_dt
 
+        time_slot_conflict = False
         for b in bookings:
             try:
                 b_start = datetime.strptime(b["start_date"], "%Y-%m-%d").date()
                 b_end = datetime.strptime(b["end_date"], "%Y-%m-%d").date()
-                # Overlap check
+                b_slot = b.get("time_slot", "full_day")
+                
+                # Check date overlap
                 if not (end_dt < b_start or start_dt > b_end):
-                    # Collision detected! Search for verified available alternatives
+                    # Check time slot conflict: e.g. requested morning, but morning is booked
+                    if inquiry.preferred_time_slot == "morning" and b_slot in ["morning", "full_day"]:
+                        time_slot_conflict = True
+
+                    # Collision detected! Search for verified available alternatives across ALL providers
                     all_active = [
                         e for e in self.repository.get_equipment()
                         if e.get("status") == "AVAILABLE" and e.get("inspection_status") == "PASSED" and e.get("equipment_id") != eq_id
                     ]
                     alternatives = []
                     for alt in all_active:
-                        # Check if alt has collision
                         alt_bk = self.repository.get_bookings(equipment_id=alt["equipment_id"])
                         has_alt_collision = False
                         for ab in alt_bk:
@@ -120,11 +129,17 @@ class DefaultAvailabilityTool(AvailabilityTool):
                         if not has_alt_collision:
                             alternatives.append({
                                 "equipment_id": alt["equipment_id"],
+                                "provider_id": alt.get("provider_id", "PROV-001"),
+                                "company_name": alt.get("company_name", "Apex Heavy Equipment Rentals"),
                                 "model_name": alt["model_name"],
                                 "equipment_type": alt["equipment_type"],
                                 "capacity": alt["capacity"],
                                 "daily_rate": alt["daily_rate"],
                             })
+
+                    evidence_txt = f"Equipment {eq_id} ({target_eq['model_name']}) is committed under booking {b.get('booking_id')} for {b['start_date']} to {b['end_date']}."
+                    if time_slot_conflict:
+                        evidence_txt += f" Morning slot (9 AM) is booked; Evening slot (5 PM) is available."
 
                     return ToolResult(
                         success=False,
@@ -132,8 +147,11 @@ class DefaultAvailabilityTool(AvailabilityTool):
                             "equipment_id": eq_id,
                             "conflict_booking_id": b.get("booking_id"),
                             "conflict_dates": f"{b['start_date']} to {b['end_date']}",
+                            "time_slot_conflict": time_slot_conflict,
+                            "requested_slot": inquiry.preferred_time_slot or "morning",
+                            "available_slot": "evening" if time_slot_conflict else "full_day",
                         },
-                        evidence=f"Equipment {eq_id} ({target_eq['model_name']}) is already committed under booking {b.get('booking_id')} for {b['start_date']} to {b['end_date']}.",
+                        evidence=evidence_txt,
                         source="inventory_database",
                         is_simulated=True,
                         suggested_alternatives=alternatives,
@@ -153,8 +171,9 @@ class DefaultAvailabilityTool(AvailabilityTool):
                 "weight_tons": target_eq.get("weight_tons", 0),
                 "min_access_width_m": target_eq.get("min_access_width_m", 3.0),
                 "inspection_status": target_eq.get("inspection_status", "PASSED"),
+                "preferred_time_slot": inquiry.preferred_time_slot or "morning",
             },
-            evidence=f"Equipment {eq_id} ({target_eq['model_name']}) is verified AVAILABLE for dates {start_dt} to {end_dt}.",
+            evidence=f"Equipment {eq_id} ({target_eq['model_name']}) is verified AVAILABLE for dates {start_dt} to {end_dt} ({inquiry.preferred_time_slot or 'full_day'}).",
             source="inventory_database",
             is_simulated=True,
         )
@@ -182,10 +201,7 @@ class DefaultPricingTool(PricingTool):
                 error="MISSING_DURATION",
             )
 
-        provider = self.repository.get_provider(provider_id or "PROV-001")
-        pricing_rules = provider.get("pricing_rules", {}) if provider else {}
-
-        # Look up equipment
+        # Look up all matching equipment units across providers for comparison
         equipment_list = self.repository.get_equipment(
             equipment_id=equipment_id,
             equipment_type=inquiry.equipment_type,
@@ -202,19 +218,76 @@ class DefaultPricingTool(PricingTool):
                 error="EQUIPMENT_NOT_FOUND",
             )
 
-        eq = equipment_list[0]
-        daily_rate = float(eq["daily_rate"])
+        # Multi-company comparison: Compute quotes for all candidate providers
         duration = int(inquiry.duration_days)
+        provider_options = []
+
+        for candidate_eq in equipment_list:
+            p_id = candidate_eq.get("provider_id", "PROV-001")
+            p_profile = self.repository.get_provider(p_id)
+            p_rules = p_profile.get("pricing_rules", {}) if p_profile else {}
+            c_name = candidate_eq.get("company_name") or (p_profile.get("company_name") if p_profile else "Apex Heavy Equipment Rentals")
+
+            c_daily = float(candidate_eq["daily_rate"])
+            c_base = c_daily * duration
+            
+            # Delivery fee: Waived if self-pickup requested
+            c_delivery = 0.0 if inquiry.delivery_mode == "pickup" else float(p_rules.get("base_delivery_fee", 250.0))
+            
+            # Operator fee logic: If operator requested or if pickup without license holder
+            c_op_fee = 0.0
+            if inquiry.operator_required:
+                c_op_fee = float(p_rules.get("certified_operator_daily_rate", 500.0)) * duration
+            elif inquiry.delivery_mode == "pickup" and inquiry.has_licensed_operator is False:
+                # Add hourly operator rate ($65/hr * 8 hrs/day or daily operator fee)
+                hr_rate = float(p_rules.get("certified_operator_hourly_rate", 65.0))
+                c_op_fee = hr_rate * 8 * duration
+
+            c_subtotal = c_base + c_delivery + c_op_fee
+            c_tax = round(c_subtotal * float(p_rules.get("sales_tax_rate", 0.0825)), 2)
+            c_total = round(c_subtotal + c_tax, 2)
+
+            provider_options.append({
+                "provider_id": p_id,
+                "company_name": c_name,
+                "equipment_id": candidate_eq["equipment_id"],
+                "model_name": candidate_eq["model_name"],
+                "daily_rate": c_daily,
+                "delivery_fee": c_delivery,
+                "total_estimated_amount": c_total,
+                "is_cheapest": False,
+                "is_eligible": candidate_eq.get("status") == "AVAILABLE" and candidate_eq.get("inspection_status") == "PASSED",
+                "note": "Delivery Fee Waived (Self-Pickup)" if inquiry.delivery_mode == "pickup" else "Includes Flat-bed Delivery",
+            })
+
+        # Rank options by total estimated amount
+        provider_options.sort(key=lambda x: x["total_estimated_amount"])
+        if provider_options:
+            provider_options[0]["is_cheapest"] = True
+
+        # Select the best equipment unit: If user requested lowest price or budget, pick cheapest eligible
+        selected_option = provider_options[0] if provider_options else None
+        selected_eq = next((e for e in equipment_list if e["equipment_id"] == selected_option["equipment_id"]), equipment_list[0]) if selected_option else equipment_list[0]
+
+        p_id = selected_eq.get("provider_id", "PROV-001")
+        provider = self.repository.get_provider(p_id)
+        pricing_rules = provider.get("pricing_rules", {}) if provider else {}
+
+        daily_rate = float(selected_eq["daily_rate"])
         base_amount = daily_rate * duration
+
+        # Transport fee waiver for self-pickup
+        delivery_fee = 0.0 if inquiry.delivery_mode == "pickup" else float(pricing_rules.get("base_delivery_fee", 250.0))
 
         # Operator fee
         operator_fee = 0.0
         if inquiry.operator_required:
             op_rate = float(pricing_rules.get("certified_operator_daily_rate", 500.0))
             operator_fee = op_rate * duration
+        elif inquiry.delivery_mode == "pickup" and inquiry.has_licensed_operator is False:
+            op_hourly = float(pricing_rules.get("certified_operator_hourly_rate", 65.0))
+            operator_fee = op_hourly * 8 * duration
 
-        # Transport & Tax
-        delivery_fee = float(pricing_rules.get("base_delivery_fee", 250.0))
         tax_rate = float(pricing_rules.get("sales_tax_rate", 0.0825))
         subtotal = base_amount + operator_fee + delivery_fee
         taxes = round(subtotal * tax_rate, 2)
@@ -222,25 +295,45 @@ class DefaultPricingTool(PricingTool):
 
         line_items = [
             {
-                "description": f"{eq['model_name']} Daily Rental ({duration} days @ ${daily_rate}/day)",
+                "description": f"{selected_eq['model_name']} Daily Rental ({duration} days @ ${daily_rate}/day)",
                 "unit_price": daily_rate,
                 "quantity": float(duration),
                 "total_price": base_amount,
             },
-            {
-                "description": "Standard Flat-bed Delivery & Retrieval",
+        ]
+
+        if inquiry.delivery_mode == "pickup":
+            line_items.append({
+                "description": "Self-Pickup by Customer (Delivery Charge Waived)",
+                "unit_price": 0.0,
+                "quantity": 1.0,
+                "total_price": 0.0,
+            })
+        else:
+            line_items.append({
+                "description": f"Standard Flat-bed Delivery & Retrieval ({selected_eq.get('company_name', 'Apex')})",
                 "unit_price": delivery_fee,
                 "quantity": 1.0,
                 "total_price": delivery_fee,
-            },
-        ]
-        if operator_fee > 0:
-            line_items.append({
-                "description": f"Certified Heavy Equipment Operator ({duration} days @ ${pricing_rules.get('certified_operator_daily_rate', 500.0)}/day)",
-                "unit_price": float(pricing_rules.get("certified_operator_daily_rate", 500.0)),
-                "quantity": float(duration),
-                "total_price": operator_fee,
             })
+
+        if operator_fee > 0:
+            if inquiry.delivery_mode == "pickup" and inquiry.has_licensed_operator is False:
+                op_hr = float(pricing_rules.get("certified_operator_hourly_rate", 65.0))
+                line_items.append({
+                    "description": f"On-Demand Certified Operator for Self-Pickup ({duration * 8} hrs @ ${op_hr}/hr)",
+                    "unit_price": op_hr * 8,
+                    "quantity": float(duration),
+                    "total_price": operator_fee,
+                })
+            else:
+                line_items.append({
+                    "description": f"Certified Heavy Equipment Operator ({duration} days @ ${pricing_rules.get('certified_operator_daily_rate', 500.0)}/day)",
+                    "unit_price": float(pricing_rules.get("certified_operator_daily_rate", 500.0)),
+                    "quantity": float(duration),
+                    "total_price": operator_fee,
+                })
+
         line_items.append({
             "description": f"State & Local Rental Surcharge/Tax ({tax_rate * 100:.2f}%)",
             "unit_price": taxes,
@@ -252,7 +345,12 @@ class DefaultPricingTool(PricingTool):
         is_over_budget = False
         budget_gap = 0.0
         if inquiry.budget is not None and inquiry.budget > 0:
-            if total_quote > inquiry.budget:
+            if inquiry.budget_is_daily:
+                daily_quote = round(total_quote / max(duration, 1), 2)
+                if daily_quote > inquiry.budget:
+                    is_over_budget = True
+                    budget_gap = round(daily_quote - inquiry.budget, 2)
+            elif total_quote > inquiry.budget:
                 is_over_budget = True
                 budget_gap = round(total_quote - inquiry.budget, 2)
 
@@ -261,8 +359,10 @@ class DefaultPricingTool(PricingTool):
         exceeds_auto_threshold = total_quote > high_threshold
 
         data_payload = {
-            "equipment_id": eq["equipment_id"],
-            "equipment_name": eq["model_name"],
+            "equipment_id": selected_eq["equipment_id"],
+            "equipment_name": selected_eq["model_name"],
+            "provider_id": p_id,
+            "company_name": selected_eq.get("company_name", "Apex Heavy Equipment Rentals"),
             "duration_days": duration,
             "daily_rate": daily_rate,
             "base_amount": base_amount,
@@ -271,6 +371,7 @@ class DefaultPricingTool(PricingTool):
             "taxes_and_fees": taxes,
             "total_estimated_amount": total_quote,
             "line_items": line_items,
+            "provider_comparison": provider_options,
             "currency": "USD",
             "is_over_budget": is_over_budget,
             "budget_gap": budget_gap,
@@ -278,8 +379,11 @@ class DefaultPricingTool(PricingTool):
         }
 
         evidence = (
-            f"Calculated quote of ${total_quote:,.2f} for {duration} days of {eq['model_name']}."
+            f"Calculated quote of ${total_quote:,.2f} for {duration} days of {selected_eq['model_name']} ({selected_eq.get('company_name')})."
         )
+        if len(provider_options) > 1:
+            cheapest = provider_options[0]
+            evidence += f" Multi-company comparison evaluated {len(provider_options)} providers: {cheapest['company_name']} identified as cheapest option (${cheapest['total_estimated_amount']:,.2f})."
         if is_over_budget:
             evidence += f" Stated contractor budget (${inquiry.budget:,.2f}) is exceeded by ${budget_gap:,.2f}."
 

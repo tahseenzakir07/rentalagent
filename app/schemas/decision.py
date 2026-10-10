@@ -72,6 +72,21 @@ class EstimatedQuoteLineItem(BaseModel):
     total_price: float = Field(..., ge=0.0, description="Total extended price for item.")
 
 
+class ProviderComparisonOption(BaseModel):
+    """Comparison item representing an equipment option across rental companies."""
+
+    provider_id: str = Field(..., description="Provider unique ID.")
+    company_name: str = Field(..., description="Rental company name.")
+    equipment_id: str = Field(..., description="Equipment unit ID.")
+    model_name: str = Field(..., description="Equipment model name.")
+    daily_rate: float = Field(..., ge=0.0, description="Daily rate.")
+    delivery_fee: float = Field(default=0.0, ge=0.0, description="Delivery fee.")
+    total_estimated_amount: float = Field(..., ge=0.0, description="Total estimated quote for period.")
+    is_cheapest: bool = Field(default=False, description="True if option is lowest cost.")
+    is_eligible: bool = Field(default=True, description="True if option passes all safety & availability checks.")
+    note: Optional[str] = Field(default=None, description="Notes on terms or slot availability.")
+
+
 class EstimatedQuote(BaseModel):
     """Structured estimated quote breakdown.
 
@@ -80,6 +95,8 @@ class EstimatedQuote(BaseModel):
 
     equipment_id: str = Field(..., description="Verified equipment inventory ID.")
     equipment_name: str = Field(..., description="Equipment model and category name.")
+    provider_id: Optional[str] = Field(default="PROV-001", description="Provider ID.")
+    company_name: Optional[str] = Field(default="Apex Heavy Equipment Rentals", description="Rental company name.")
     duration_days: int = Field(..., gt=0, description="Rental period in days.")
     daily_rate: float = Field(..., ge=0.0, description="Daily rental rate.")
     base_amount: float = Field(..., ge=0.0, description="Base equipment rental charge.")
@@ -90,6 +107,10 @@ class EstimatedQuote(BaseModel):
     line_items: List[EstimatedQuoteLineItem] = Field(
         default_factory=list,
         description="Itemized quote components.",
+    )
+    provider_comparison: List[ProviderComparisonOption] = Field(
+        default_factory=list,
+        description="Multi-company budget comparison options evaluated by agent.",
     )
     currency: str = Field(default="USD", description="Currency code.")
     disclaimer: str = Field(

@@ -9,6 +9,7 @@ and auditable reasoning traces. Supports both SIMULATED (offline) and LLM modes.
 import logging
 from typing import Optional
 
+from app.agent.analyse import EquipmentAnalyzer
 from app.agent.confidence import ConfidenceAssessor
 from app.agent.counter_offer import CounterOfferGenerator
 from app.agent.decision_engine import DecisionEngine
@@ -45,6 +46,7 @@ class AgentOrchestrator:
         self.tool_registry = tool_registry or ToolRegistry(self.repository)
         self.decision_engine = decision_engine or DecisionEngine()
         self.counter_offer_gen = CounterOfferGenerator(self.repository)
+        self.equipment_analyzer = EquipmentAnalyzer(self.repository)
 
     @property
     def parser(self) -> InquiryParser:
@@ -86,6 +88,21 @@ class AgentOrchestrator:
 
         parsed: ParsedInquiry = self.parser.parse(request.contractor_message, parse_context)
 
+        # Merge multi-turn conversation history if provided
+        if request.conversation_history:
+            prev_parsed_acc = None
+            for item in request.conversation_history:
+                msg_content = item.get("content") or item.get("message") or ""
+                role = item.get("role") or ""
+                if role == "user" and msg_content and msg_content != request.contractor_message:
+                    prev_p = self.parser.parse(msg_content, parse_context)
+                    if prev_parsed_acc is None:
+                        prev_parsed_acc = prev_p
+                    else:
+                        prev_parsed_acc = self.equipment_analyzer.merge_conversation_context(prev_p, previous_parsed=prev_parsed_acc)
+            if prev_parsed_acc:
+                parsed = self.equipment_analyzer.merge_conversation_context(parsed, previous_parsed=prev_parsed_acc)
+
         # Propagate simulated tool error token if requested in metadata
         if request.metadata.get("simulate_tool_error"):
             parsed.site_access_details = (parsed.site_access_details or "") + " SIMULATE_TOOL_FAILURE_TEST"
@@ -104,15 +121,19 @@ class AgentOrchestrator:
             },
         )
 
-        # -------------------------------------------------------------
-        # STEP 2: ASSESS INFORMATION & RISK
-        # -------------------------------------------------------------
+        # Check if equipment_type exists in fleet catalog database using EquipmentAnalyzer
+        is_known_catalog_type = self.equipment_analyzer.is_catalog_equipment(parsed.equipment_type)
+
         has_essential_missing = bool(
             not parsed.start_date
             or not parsed.duration_days
             or not parsed.equipment_type
-            or not parsed.equipment_capacity
+            or (not parsed.equipment_capacity and is_known_catalog_type)
         )
+
+        if parsed.equipment_type and not is_known_catalog_type:
+            # If equipment_type is unlisted/unknown (e.g. "knife"), execute availability check to confirm DB absence
+            has_essential_missing = False
 
         has_site_risk = bool(
             parsed.site_access_details
@@ -123,7 +144,8 @@ class AgentOrchestrator:
             event_type="ASSESSMENT_COMPLETED",
             explanation=(
                 f"Assessment status: essential_missing={has_essential_missing}, "
-                f"site_risk={has_site_risk}, budget_specified={parsed.budget is not None}."
+                f"is_known_catalog_type={is_known_catalog_type}, site_risk={has_site_risk}, "
+                f"budget_specified={parsed.budget is not None}."
             ),
             metadata={"has_essential_missing": has_essential_missing, "has_site_risk": has_site_risk},
         )
@@ -171,13 +193,20 @@ class AgentOrchestrator:
                     metadata={"success": availability_result.success, "error": availability_result.error},
                 )
 
-                # If tool failed or encountered system error -> STOP execution and fail-closed
+                # If tool failed or encountered system error / item missing -> STOP execution
                 if availability_result.error:
-                    tracer.log_event(
-                        event_type="SYSTEM_ERROR_ENCOUNTERED",
-                        explanation=f"Availability verification failed with error: {availability_result.error}. Halting tool pipeline.",
-                        metadata={"action": "ESCALATE_MANUAL_REVIEW"},
-                    )
+                    if availability_result.error == "EQUIPMENT_NOT_FOUND":
+                        tracer.log_event(
+                            event_type="EQUIPMENT_NOT_FOUND_IN_CATALOG",
+                            explanation=f"Equipment '{parsed.equipment_type}' was not found in fleet catalog database. Halting tool pipeline.",
+                            metadata={"action": "NOTIFY_CATALOG_UNAVAILABLE"},
+                        )
+                    else:
+                        tracer.log_event(
+                            event_type="SYSTEM_ERROR_ENCOUNTERED",
+                            explanation=f"Availability verification failed with error: {availability_result.error}. Halting tool pipeline.",
+                            metadata={"action": "ESCALATE_MANUAL_REVIEW"},
+                        )
                     break
 
                 # If requested machine is unavailable -> do NOT calculate normal quote; proceed to evaluate alternatives
