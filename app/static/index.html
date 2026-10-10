@@ -841,6 +841,26 @@
 </head>
 <body>
 
+  <div class="modal-overlay" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="modal-window">
+      <div class="modal-head">
+        <h3 class="modal-title" id="loginTitle">Sign in</h3>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Enter your login name to personalize this session.
+      </p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginNameInput">Login name</label>
+          <input type="text" id="loginNameInput" class="form-input" autocomplete="username" maxlength="80" required>
+        </div>
+        <div style="display: flex; justify-content: flex-end;">
+          <button class="btn-send" type="submit">Continue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Top System API Key Notice Banner (Dynamic) -->
   <div id="globalApiNotice" class="global-api-banner" style="display: none;">
     <div>
@@ -899,9 +919,8 @@
         <!-- Top Menu Block: Profile, History, Preferences -->
         <div class="menu-bar-block">
           <div class="menu-profile-pill" onclick="openModal('profile')">
-            <div class="menu-avatar-icon">MV</div>
-            <span>Marcus Vance</span>
-            <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 500;">(Austin Metro)</span>
+            <div class="menu-avatar-icon" id="loginAvatarInitials"></div>
+            <span id="loginDisplayName"></span>
           </div>
 
           <div class="menu-links">
@@ -913,6 +932,9 @@
             </button>
             <button class="menu-btn" onclick="openModal('contractorSettings')">
               <span>⚙️</span> <span>Preferences</span>
+            </button>
+            <button class="menu-btn" onclick="switchLoginName()">
+              <span>↪</span> <span>Switch User</span>
             </button>
           </div>
         </div>
@@ -964,7 +986,7 @@
           <div class="chat-bubble-row agent">
             <div class="c-avatar agent">R</div>
             <div class="c-bubble">
-              <strong>Hello Marcus!</strong> I am <strong>Rentaliq</strong>, your AI Equipment Rental Decision Agent.
+              <strong>Hello <span id="welcomeLoginName"></span>!</strong> I am <strong>Rentaliq</strong>, your AI Equipment Rental Decision Agent.
               <br><br>
               Browse the <strong>Available Fleet</strong> on the left and click <em>"Ask in Chat"</em>, or type your job requirements directly below.
               <br><br>
@@ -1082,7 +1104,7 @@
             <!-- Left: Contractor & Equipment Box -->
             <div class="summary-box">
               <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 1rem;">Contractor & Equipment</h4>
-              <div class="summary-row"><span>Contractor:</span> <span id="reqDetailContractor">Marcus Vance (CON-101)</span></div>
+              <div class="summary-row"><span>Contractor:</span> <span id="reqDetailContractor">—</span></div>
               <div class="summary-row"><span>Company:</span> <span id="reqDetailCompany">Austin Metro Excavation</span></div>
               <div class="summary-row"><span>Credit Tier:</span> <span style="color: var(--success);" id="reqDetailCredit">Tier 1</span></div>
               <div class="summary-row"><span>Safety Score:</span> <span id="reqDetailSafety">4.9 / 5.0</span></div>
@@ -1169,7 +1191,7 @@
         <button class="btn-close-modal" onclick="closeModal('profile')">✕</button>
       </div>
       <div style="font-size: 0.88rem; line-height: 1.7;">
-        <div class="summary-row"><span>Account Name:</span> <strong>Marcus Vance</strong></div>
+        <div class="summary-row"><span>Account Name:</span> <strong id="profileAccountName"></strong></div>
         <div class="summary-row"><span>Business:</span> <span>Austin Metro Excavation LLC</span></div>
         <div class="summary-row"><span>Credit Tier:</span> <span style="color: var(--success); font-weight: 700;">Tier 1 (Approved)</span></div>
         <div class="summary-row"><span>Safety Rating:</span> <span>4.9 / 5.0 (OSHA Compliant)</span></div>
@@ -1285,6 +1307,7 @@
   <!-- ======================================================== -->
   <script>
     let activeRole = 'contractor';
+    let currentLoginName = '';
     let fleetCatalog = [];
     let providerInquiries = [];
     let providerBookings = [];
@@ -1292,6 +1315,14 @@
 
     // Initialize
     window.addEventListener('DOMContentLoaded', () => {
+      const savedLoginName = sessionStorage.getItem('rentaliqLoginName');
+      if (savedLoginName) {
+        setLoginName(savedLoginName);
+      } else {
+        document.getElementById('loginModal').classList.add('active');
+        document.getElementById('loginNameInput').focus();
+      }
+      document.getElementById('loginForm').addEventListener('submit', handleLogin);
       loadEquipmentCatalog();
       loadSettingsStatus();
       loadProviderData();
@@ -1309,6 +1340,32 @@
         }
       } catch (e) {}
     });
+
+    function handleLogin(event) {
+      event.preventDefault();
+      const name = document.getElementById('loginNameInput').value.trim().replace(/\s+/g, ' ');
+      if (!name) return;
+
+      sessionStorage.setItem('rentaliqLoginName', name);
+      setLoginName(name);
+    }
+
+    function setLoginName(name) {
+      currentLoginName = name;
+      const initials = name.split(/\s+/).map(part => part.charAt(0)).slice(0, 2).join('').toUpperCase();
+      document.getElementById('loginDisplayName').textContent = name;
+      document.getElementById('loginAvatarInitials').textContent = initials;
+      document.getElementById('welcomeLoginName').textContent = name;
+      document.getElementById('profileAccountName').textContent = name;
+      document.getElementById('loginModal').classList.remove('active');
+    }
+
+    function switchLoginName() {
+      sessionStorage.removeItem('rentaliqLoginName');
+      document.getElementById('loginNameInput').value = '';
+      document.getElementById('loginModal').classList.add('active');
+      document.getElementById('loginNameInput').focus();
+    }
 
     // ----------------------------------------------------
     // ROLE SWITCHING
@@ -1635,7 +1692,7 @@
         const resp = data.response;
         const parsed = resp.parsed_inquiry;
 
-        document.getElementById('reqDetailContractor').innerText = `${req.contractor_id || 'CON-101'} (Marcus Vance)`;
+        document.getElementById('reqDetailContractor').innerText = `${currentLoginName} (${req.contractor_id || 'CON-101'})`;
         document.getElementById('reqDetailCompany').innerText = 'Austin Metro Excavation LLC';
         document.getElementById('reqDetailEquipment').innerText = `${parsed.equipment_capacity || ''} ${parsed.equipment_type || 'Equipment'}`;
         document.getElementById('reqDetailDates').innerText = `${parsed.start_date || 'TBD'} (${parsed.duration_days || '—'} days)`;
